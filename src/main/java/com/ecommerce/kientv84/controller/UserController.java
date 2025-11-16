@@ -31,7 +31,6 @@ public class UserController {
         return ResponseEntity.ok(userService.searchUserSuggestion(q, limit));
     }
 
-
     @PostMapping("/account")
     public ResponseEntity<UserResponse> createUser( @Valid  @RequestBody UserRequest user) {
         return  ResponseEntity.ok(userService.createUser(user));

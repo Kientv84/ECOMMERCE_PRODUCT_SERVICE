@@ -44,6 +44,10 @@ public enum EnumError {
     ACC_ERR_NOT_FOUND("ACC_EL_NF", "Not found user with id", HttpStatus.BAD_REQUEST),
 
     AUTH_ERR_INVALID_TOKEN("AUTH_ERR_INVALID_TOKEN", "Authentication token invalid", HttpStatus.BAD_REQUEST),
+    //----------- UPLOAD ------------
+    FILE_EMPTY("FILE_EMPTY", "File is empty", HttpStatus.BAD_REQUEST),
+    FILE_INVALID("FILE_INVALID", "Invalid file type", HttpStatus.BAD_REQUEST),
+    FILE_TOO_LARGE("FILE_TOO_LARGE", "File too large (max 5MB)", HttpStatus.BAD_REQUEST),
 
     //----------- PRODUCT ------------
     PRO_ERR_GET("PRO-GA", "Have error in process get", HttpStatus.BAD_REQUEST),
@@ -87,6 +91,7 @@ public enum EnumError {
     private final String code;
     private final String defaultMessage;
     private final HttpStatus httpStatus;
+
 
 
     public static EnumError fromCode(String code) {
