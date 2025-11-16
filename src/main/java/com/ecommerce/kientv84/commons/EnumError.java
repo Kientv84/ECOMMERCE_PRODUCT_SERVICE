@@ -30,9 +30,9 @@ public enum EnumError {
 
 //----------- ACCOUNT ------------
     ACC_DATA_EXISTED("ACC-DTE", "Data exit", HttpStatus.CONFLICT),
-
+    ACC_ERR_INVALID_PASSWORD("ACC_ERR_INVALID_PASSWORD", "Invalid password", HttpStatus.BAD_REQUEST),
     //get
-
+    ACC_NOT_FOUND("ACC_NOT_FOUND", "Not found account with email", HttpStatus.BAD_REQUEST),
     ACC_ERR_GET("ACC-GA", "Have error in process get", HttpStatus.BAD_REQUEST),
 
     // update
@@ -42,6 +42,8 @@ public enum EnumError {
     ACC_ERR_DEL("ACC-DL", "Have error in process delete", HttpStatus.BAD_REQUEST),
     ACC_ERR_DEL_EM("ACC-DL-E", "List ids to delete is empty", HttpStatus.BAD_REQUEST),
     ACC_ERR_NOT_FOUND("ACC_EL_NF", "Not found user with id", HttpStatus.BAD_REQUEST),
+
+    AUTH_ERR_INVALID_TOKEN("AUTH_ERR_INVALID_TOKEN", "Authentication token invalid", HttpStatus.BAD_REQUEST),
 
     //----------- PRODUCT ------------
     PRO_ERR_GET("PRO-GA", "Have error in process get", HttpStatus.BAD_REQUEST),

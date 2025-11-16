@@ -47,8 +47,7 @@ public class SercurityConfig {
                 //Được bật mặc định trong Spring Security, nhưng khi bạn làm REST API thì nên tắt đi.
                 .formLogin(form -> form.disable())
                 .authorizeHttpRequests(auth -> auth //cấu hình quyền truy cập cho các URL endpoint.
-                        .requestMatchers( "/authentication/**").permitAll() // cho phép gọi không cần login, Tất cả các request bắt đầu bằng /system_user/ và /auth/ sẽ được phép truy cập mà không cần login.
-                        .requestMatchers("/v1/api/**").permitAll()
+                        .requestMatchers( "/authentication/login").permitAll() // cho phép gọi không cần login, Tất cả các request bắt đầu bằng /system_user/ và /auth/ sẽ được phép truy cập mà không cần login.
                         .anyRequest().authenticated() // các endpoint khác cần login, Các request khác bắt buộc phải đăng nhập (có xác thực).
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class) //đảm bảo rằng filter xử lý token được thực thi trước khi Spring xác thực bằng username/password mặc định.

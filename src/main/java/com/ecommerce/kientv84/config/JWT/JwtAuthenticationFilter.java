@@ -31,8 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { //OncePerReq
 
         // Bỏ qua JWT check cho các endpoint public
         if (
-                path.startsWith("/authentication/") ||
-                        path.startsWith("/user/")
+                path.equals("/authentication/login")
         ) {
             filterChain.doFilter(request, response);
             return;
@@ -48,12 +47,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { //OncePerReq
                 String email = jwtUtil.validateToken(token); // nếu sai sẽ throw exception
 
                 // Tạo quyền
-                var authorities = List.of(new SimpleGrantedAuthority("ADMIN"));
-                new UsernamePasswordAuthenticationToken(email, null, authorities);
+                var authorities = List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
 
-                // Tạo đối tượng Authentication và gán vào SecurityContextHolder
                 UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(email, null, null); // quyền tạm thời null
+                        new UsernamePasswordAuthenticationToken(email, null, authorities);
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request)); // Gán thông tin xác thực vào Spring Security
                 SecurityContextHolder.getContext().setAuthentication(authToken);
@@ -70,3 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { //OncePerReq
 //Khi ta config như vậy thì đầu tiên cần gọi api login và sau đó token sẽ được tạo ra
 // từ dó cần chèn vào authorize header để bởi spring sercurity có thể xác thực và chúng ta có thể gọi các api khác.
 // và khi token hết hạn thì cần gọi lại api login tôi và dán lại.
+
+//// Tạo AuthenticationToken với quyền
+//UsernamePasswordAuthenticationToken authToken =
+//        new UsernamePasswordAuthenticationToken(email, null, authorities);
