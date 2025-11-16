@@ -9,6 +9,7 @@ public class LoginResponse {
     private int success;
     private String message;
     private String accessToken;
+    private String refreshToken;
     private String name;
 
     public LoginResponse(int success, String message) {

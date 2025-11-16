@@ -38,6 +38,26 @@ public class JwtUtil {
         return decodedJWT.getSubject(); // email
     }
 
+    public String generateRefreshToken(String email) {
+        long refreshExpiration = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+        return JWT.create()
+                .withSubject(email)
+                .withIssuer(jwtConfig.getIssuer())
+                .withIssuedAt(new Date())
+                .withExpiresAt(new Date(System.currentTimeMillis() + refreshExpiration))
+                .sign(Algorithm.HMAC256(jwtConfig.getSecret()));
+    }
+
+    public String validateRefreshToken(String token) {
+        DecodedJWT decodedJWT = JWT.require(Algorithm.HMAC256(jwtConfig.getSecret()))
+                .withIssuer(jwtConfig.getIssuer())
+                .build()
+                .verify(token);
+
+        return decodedJWT.getSubject();
+    }
+
     //Cấu trúc cua 1 JWT: <Header>.<Payload>.<Signature>
     // HEADER {
     //  "alg": "HS256",
