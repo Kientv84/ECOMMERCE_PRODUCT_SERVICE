@@ -1,8 +1,11 @@
 package com.ecommerce.kientv84.services.impls;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.ecommerce.kientv84.commons.Constant;
 import com.ecommerce.kientv84.commons.EnumError;
 import com.ecommerce.kientv84.commons.StatusEnum;
+import com.ecommerce.kientv84.commons.upload.ImageValidator;
 import com.ecommerce.kientv84.dtos.request.UserRequest;
 import com.ecommerce.kientv84.dtos.request.UserUpdateRequest;
 import com.ecommerce.kientv84.dtos.request.search.user.UserSearchModel;
@@ -17,6 +20,7 @@ import com.ecommerce.kientv84.mappers.UserMapper;
 import com.ecommerce.kientv84.respositories.RoleRepository;
 import com.ecommerce.kientv84.respositories.UserRepository;
 import com.ecommerce.kientv84.services.RedisService;
+import com.ecommerce.kientv84.services.UploadFileProvider;
 import com.ecommerce.kientv84.services.UserService;
 import com.ecommerce.kientv84.utils.PageableUtils;
 import com.ecommerce.kientv84.utils.SpecificationBuilder;
@@ -29,6 +33,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -43,6 +49,8 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final RoleRepository roleRepository;
     private final RedisService redisService;
+    private final UploadFileProvider uploadFileProvider;
+    private final Cloudinary cloudinary;
 
     @Override
     public PagedResponse<UserResponse> searchUsers(UserSearchRequest req) {
@@ -277,6 +285,48 @@ public class UserServiceImpl implements UserService {
             log.error("Unexpected error while hard deleting users {}", ids, e);
             throw new ServiceException(EnumError.INTERNAL_ERROR, "ACC-S-999", new Object[]{e.getMessage()});
         }
+    }
+
+    // ===================== AVATAR =====================
+
+    @Override
+    public UserResponse uploadAvatar(UUID id, MultipartFile avatar) {
+        UserEntity user = userRepository.findById(id)
+                .orElseThrow(() -> new ServiceException(EnumError.ACC_NOT_FOUND, "user.not.found"));
+
+       try {
+           // 1. Upload file (FileStorageService đã validate)
+           String folder = "users/" + id;
+           String avatarUrl = uploadFileProvider.upload(avatar, folder);
+
+           // 2. Xóa avatar cũ nếu có
+           if (user.getUserAvatar() != null) {
+               uploadFileProvider.deleteFileFromCloudinary(user.getUserAvatar());
+           }
+
+           // 3. Lưu avatar mới
+           user.setUserAvatar(avatarUrl);
+           userRepository.save(user);
+
+           return userMapper.mapToUserResponse(user);
+       } catch (Exception e) {
+           log.error("have error to upload", e);
+           throw new ServiceException(EnumError.UPLOAD_FAILED, "file.upload.fail");
+       }
+    }
+
+    @Override
+    public UserResponse deleteAvatar(UUID id) {
+        UserEntity user = userRepository.findById(id)
+                .orElseThrow(() -> new ServiceException(EnumError.ACC_NOT_FOUND, "user.not.found"));
+
+        if (user.getUserAvatar() != null) {
+            uploadFileProvider.deleteFileFromCloudinary(user.getUserAvatar());
+            user.setUserAvatar(null);
+            userRepository.save(user);
+        }
+
+        return userMapper.mapToUserResponse(user);
     }
 }
 

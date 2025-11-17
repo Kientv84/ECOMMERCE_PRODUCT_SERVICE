@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,7 +32,6 @@ public class UserController {
         return ResponseEntity.ok(userService.searchUserSuggestion(q, limit));
     }
 
-
     @PostMapping("/account")
     public ResponseEntity<UserResponse> createUser( @Valid  @RequestBody UserRequest user) {
         return  ResponseEntity.ok(userService.createUser(user));
@@ -41,7 +41,6 @@ public class UserController {
     public ResponseEntity<UserResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.getById(id));
     }
-
 
     @PostMapping("/account/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id, @Valid @RequestBody UserUpdateRequest updatedData) {
@@ -53,4 +52,16 @@ public class UserController {
         return ResponseEntity.ok(userService.deleteUser(ids));
     }
 
+    @PostMapping("/avatar/{id}")
+    public ResponseEntity<UserResponse> uploadAvatar(
+            @PathVariable UUID id,
+            @RequestParam("avatar") MultipartFile avatar
+    ) {
+        return ResponseEntity.ok(userService.uploadAvatar(id, avatar));
+    }
+
+    @DeleteMapping("/avatar/{id}")
+    public ResponseEntity<UserResponse> deleteAvatar(@PathVariable UUID id) {
+        return ResponseEntity.ok(userService.deleteAvatar(id));
+    }
 }

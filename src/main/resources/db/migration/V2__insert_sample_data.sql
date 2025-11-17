@@ -81,8 +81,8 @@ INSERT INTO brand_entity (
     updated_by
 )
 VALUES
-    ('Gymshark', 'GYMSHARK', 'UK', 'Thương hiệu thể thao nổi tiếng', 'https://cdn.gymshark.com/logo.jpg', 'ACTIVE', 'SYSTEM', 'SYSTEM'),
-    ('Nike', 'NIKE', 'USA', 'Thương hiệu thể thao nổi tiếng toàn cầu', 'https://cdn.nike.com/logo.jpg', 'ACTIVE', 'SYSTEM', 'SYSTEM')
+    ('Gymshark', 'GYMSHARK', 'UK', 'Thương hiệu thể thao nổi tiếng', 'https://cdn.gymshark.com/logo.jpg', 'active', 'SYSTEM', 'SYSTEM'),
+    ('Nike', 'NIKE', 'USA', 'Thương hiệu thể thao nổi tiếng toàn cầu', 'https://cdn.nike.com/logo.jpg', 'active', 'SYSTEM', 'SYSTEM')
 ON CONFLICT DO NOTHING;
 
 -- 4. Thêm dữ liệu mẫu cho bảng category_entity
@@ -96,8 +96,8 @@ INSERT INTO category_entity (
     updated_by
 )
 VALUES
-    ('Men', 'MEN', 'Thời trang nam', 'https://cdn.example.com/men.jpg', 'ACTIVE', 'SYSTEM', 'SYSTEM'),
-    ('Women', 'WOMEN', 'Thời trang nữ', 'https://cdn.example.com/women.jpg', 'ACTIVE', 'SYSTEM', 'SYSTEM'),
+    ('Men', 'MEN', 'Thời trang nam', 'https://cdn.example.com/men.jpg', 'active', 'SYSTEM', 'SYSTEM'),
+    ('Women', 'WOMEN', 'Thời trang nữ', 'https://cdn.example.com/women.jpg', 'active', 'SYSTEM', 'SYSTEM'),
      ('Accessory', 'ACCESSORY', 'Phụ Kiện', 'https://cdn.example.com/accessory.jpg', 'ACTIVE', 'SYSTEM', 'SYSTEM')
 ON CONFLICT DO NOTHING;
 
@@ -113,9 +113,9 @@ INSERT INTO sub_category_entity (
     updated_by
 )
 VALUES
-    ('T-shirt', 'T_SHIRT', 'Áo thun nam', 'https://cdn.example.com/tshirt.jpg', 'ACTIVE',
+    ('T-shirt', 'T_SHIRT', 'Áo thun nam', 'https://cdn.example.com/tshirt.jpg', 'active',
      (SELECT id FROM category_entity WHERE category_code='MEN' LIMIT 1), 'SYSTEM', 'SYSTEM'),
-    ('Shorts', 'SHORTS', 'Quần short nam', 'https://cdn.example.com/shorts.jpg', 'ACTIVE',
+    ('Shorts', 'SHORTS', 'Quần short nam', 'https://cdn.example.com/shorts.jpg', 'active',
      (SELECT id FROM category_entity WHERE category_code='MEN' LIMIT 1), 'SYSTEM', 'SYSTEM')
 ON CONFLICT DO NOTHING;
 
@@ -129,8 +129,8 @@ INSERT INTO collection_entity (
     updated_by
 )
 VALUES
-    ('Apex', 'APEX', 'Bộ sưu tập Apex', 'ACTIVE', 'SYSTEM', 'SYSTEM'),
-    ('Vital', 'VITAL', 'Bộ sưu tập Vital', 'ACTIVE', 'SYSTEM', 'SYSTEM')
+    ('Apex', 'APEX', 'Bộ sưu tập Apex', 'active', 'SYSTEM', 'SYSTEM'),
+    ('Vital', 'VITAL', 'Bộ sưu tập Vital', 'active', 'SYSTEM', 'SYSTEM')
 ON CONFLICT DO NOTHING;
 
 -- 7. Thêm dữ liệu mẫu cho bảng material_entity
@@ -143,8 +143,8 @@ INSERT INTO material_entity (
     updated_by
 )
 VALUES
-    ('Polyester', 'POLY', 'Vải Polyester', 'ACTIVE', 'SYSTEM', 'SYSTEM'),
-    ('Nylon', 'NYLON', 'Vải Nylon', 'ACTIVE', 'SYSTEM', 'SYSTEM')
+    ('Polyester', 'POLY', 'Vải Polyester', 'active', 'SYSTEM', 'SYSTEM'),
+    ('Nylon', 'NYLON', 'Vải Nylon', 'active', 'SYSTEM', 'SYSTEM')
 ON CONFLICT DO NOTHING;
 
 -- 8. Thêm dữ liệu mẫu cho bảng product_entity
@@ -185,7 +185,7 @@ VALUES (
     'Slim Fit',
     'Machine wash cold',
     50,
-    'ACTIVE',
+    'active',
     'https://cdn.gymshark.com/products/apex-seamless-tshirt.jpg',
     4.8,
     120,
@@ -200,3 +200,4 @@ SET document_tsv = to_tsvector(
     'simple',
     coalesce(user_name,'') || ' ' || coalesce(user_email,'') || ' ' || coalesce(user_phone_number,'')
 );
+

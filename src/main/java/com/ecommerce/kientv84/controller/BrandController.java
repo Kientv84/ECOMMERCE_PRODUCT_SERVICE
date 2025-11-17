@@ -2,13 +2,18 @@ package com.ecommerce.kientv84.controller;
 
 import com.ecommerce.kientv84.dtos.request.BrandRequest;
 import com.ecommerce.kientv84.dtos.request.BrandUpdateRequest;
+import com.ecommerce.kientv84.dtos.request.search.brand.BrandSearchRequest;
+import com.ecommerce.kientv84.dtos.request.search.user.UserSearchRequest;
 import com.ecommerce.kientv84.dtos.response.BrandResponse;
+import com.ecommerce.kientv84.dtos.response.PagedResponse;
+import com.ecommerce.kientv84.dtos.response.UserResponse;
 import com.ecommerce.kientv84.mappers.BrandMapper;
 import com.ecommerce.kientv84.services.BrandService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,9 +24,15 @@ import java.util.UUID;
 public class BrandController {
     private final BrandService brandService;
 
-    @GetMapping("/brands")
-    public ResponseEntity<List<BrandResponse>> getALlBrand() {
-        return ResponseEntity.ok(brandService.getAllBrand());
+    @PostMapping("/brands/filter")
+    public ResponseEntity<PagedResponse<BrandResponse>> searchUsers(@RequestBody BrandSearchRequest req) {
+        return ResponseEntity.ok(brandService.searchUsers(req));
+    }
+
+    @GetMapping("/brands/suggestion")
+    public ResponseEntity<List<BrandResponse>> getUserSuggestions(@RequestParam String q,
+                                                                 @RequestParam(defaultValue = "5") int limit) {
+        return ResponseEntity.ok(brandService.searchUserSuggestion(q, limit));
     }
 
     @PostMapping("/brand")
@@ -44,4 +55,16 @@ public class BrandController {
         return brandService.deleteBrands(uuids);
     }
 
+    @PostMapping("/thumbnail_url/{id}")
+    public ResponseEntity<BrandResponse> uploadAvatar(
+            @PathVariable UUID id,
+            @RequestParam("thumbnail_url") MultipartFile thumbnailUrl
+    ) {
+        return ResponseEntity.ok(brandService.uploadThumbnail(id, thumbnailUrl));
+    }
+
+    @DeleteMapping("/thumbnail_url/{id}")
+    public ResponseEntity<BrandResponse> deleteAvatar(@PathVariable UUID id) {
+        return ResponseEntity.ok(brandService.deleteThumnailUrl(id));
+    }
 }
