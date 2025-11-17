@@ -30,5 +30,16 @@ public class ImageValidator {
             throw new ServiceException(EnumError.FILE_TOO_LARGE, "file.too.large");
         }
     }
+
+    public void validateMany(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            throw new ServiceException(EnumError.FILE_EMPTY, "file.empty");
+        }
+
+        for (MultipartFile file : files) {
+            validateImage(file);
+        }
+    }
+
 }
 

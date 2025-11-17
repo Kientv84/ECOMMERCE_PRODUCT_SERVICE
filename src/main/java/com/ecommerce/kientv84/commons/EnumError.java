@@ -86,6 +86,7 @@ public enum EnumError {
     MATERIAL_DATA_EXISTED("MATERIAL-DTE", "Data material exit", HttpStatus.CONFLICT),
     MATERIAL_ERR_NOT_FOUND("MATERIAL_NF", "Not found material with id", HttpStatus.BAD_REQUEST),
 
+    UPLOAD_FAILED("UPLOAD_FAILED", "Failed to upload avata", HttpStatus.BAD_REQUEST),
 
     INTERNAL_ERROR("ACC-S-999", "Unexpected internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
     private final String code;

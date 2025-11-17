@@ -15,5 +15,6 @@ public class BrandResponse {
     private String brandCode;
     private String status;
     private String description;
+    private String thumbnailUrl;
 }
 
