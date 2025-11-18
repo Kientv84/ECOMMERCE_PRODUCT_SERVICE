@@ -55,7 +55,7 @@ public class BrandController {
         return brandService.deleteBrands(uuids);
     }
 
-    @PostMapping("/thumbnail_url/{id}")
+    @PostMapping("/brand/thumbnail_url/{id}")
     public ResponseEntity<BrandResponse> uploadAvatar(
             @PathVariable UUID id,
             @RequestParam("thumbnail_url") MultipartFile thumbnailUrl
@@ -63,7 +63,7 @@ public class BrandController {
         return ResponseEntity.ok(brandService.uploadThumbnail(id, thumbnailUrl));
     }
 
-    @DeleteMapping("/thumbnail_url/{id}")
+    @DeleteMapping("/brand/thumbnail_url/{id}")
     public ResponseEntity<BrandResponse> deleteAvatar(@PathVariable UUID id) {
         return ResponseEntity.ok(brandService.deleteThumnailUrl(id));
     }

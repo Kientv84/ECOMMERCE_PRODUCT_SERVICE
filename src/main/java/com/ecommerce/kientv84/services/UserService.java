@@ -18,7 +18,6 @@ public interface UserService {
 
     UserResponse updateUser(UUID id, UserUpdateRequest updatedData);
 
-
     String deleteUser(List<UUID> ids);
 
     PagedResponse<UserResponse> searchUsers(UserSearchRequest req);

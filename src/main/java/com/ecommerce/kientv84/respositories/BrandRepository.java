@@ -20,5 +20,5 @@ public interface BrandRepository extends JpaRepository<BrandEntity, UUID>,  JpaS
         ORDER BY ts_rank(document_tsv, to_tsquery('simple', :q || ':*')) DESC
         LIMIT :limit
         """, nativeQuery = true)
-    List<BrandEntity> searchUserSuggestion(@Param("q") String q, @Param("limit") int limit);
+    List<BrandEntity> searchBrandSuggestion(@Param("q") String q, @Param("limit") int limit);
 }

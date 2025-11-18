@@ -107,7 +107,7 @@ public class BrandServiceImpl implements BrandService {
 
     @Override
     public List<BrandResponse> searchUserSuggestion(String q, int limit) {
-        List<BrandEntity> brands = brandRepository.searchUserSuggestion(q, limit);
+        List<BrandEntity> brands = brandRepository.searchBrandSuggestion(q, limit);
         return brands.stream().map(br -> brandMapper.mapToBrandResponse(br)).toList();
     }
 
