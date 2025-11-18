@@ -104,7 +104,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public List<CategoryResponse> searchUserSuggestion(String q, int limit) {
+    public List<CategoryResponse> searchCategorySuggestion(String q, int limit) {
         List<CategoryEntity> categoryEntities = categoryRepository.searchCategorySuggestion(q, limit);
         return categoryEntities.stream().map(br -> categoryMapper.mapToCategoryResponse(br)).toList();
     }

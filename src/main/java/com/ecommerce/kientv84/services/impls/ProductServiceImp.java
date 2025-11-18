@@ -3,6 +3,8 @@ package com.ecommerce.kientv84.services.impls;
 import com.ecommerce.kientv84.commons.EnumError;
 import com.ecommerce.kientv84.dtos.request.ProductRequest;
 import com.ecommerce.kientv84.dtos.request.ProductUpdateRequest;
+import com.ecommerce.kientv84.dtos.request.search.product.ProductSearchRequest;
+import com.ecommerce.kientv84.dtos.response.PagedResponse;
 import com.ecommerce.kientv84.dtos.response.ProductResponse;
 import com.ecommerce.kientv84.entites.*;
 import com.ecommerce.kientv84.exceptions.ServiceException;
@@ -10,9 +12,12 @@ import com.ecommerce.kientv84.mappers.ProductMapper;
 import com.ecommerce.kientv84.messaging.producers.ProductProducer;
 import com.ecommerce.kientv84.respositories.*;
 import com.ecommerce.kientv84.services.ProductService;
+import com.ecommerce.kientv84.services.RedisService;
+import com.ecommerce.kientv84.services.UploadFileProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.List;
@@ -32,19 +37,27 @@ public class ProductServiceImp implements ProductService {
     private final MaterialRepository materialRepository;
     private final ProductMapper productMapper;
     private final ProductProducer productProducer;
+    private final RedisService redisService;
+    private final UploadFileProvider uploadFileProvider;
 
     @Override
-    public List<ProductResponse> getAllProduct() {
-        try {
+    public PagedResponse<ProductResponse> getAllProduct(ProductSearchRequest req) {
+        return null;
+    }
 
-            List<ProductResponse> items = productRepository.findAll().stream().map(item -> productMapper.mapToProductResponse(item)).toList();
+    @Override
+    public List<ProductResponse> searchProductSuggestion(String q, int limit) {
+        return List.of();
+    }
 
-            return items;
+    @Override
+    public ProductResponse uploadThumbnail(UUID id, MultipartFile thumbnailUrl) {
+        return null;
+    }
 
-        } catch (Exception e) {
-            log.error("Have eror", e);
-            throw new ServiceException(EnumError.PRO_ERR_GET, "product.get.error" );
-        }
+    @Override
+    public ProductResponse deleteThumbnailUrl(UUID uuid) {
+        return null;
     }
 
     @Override

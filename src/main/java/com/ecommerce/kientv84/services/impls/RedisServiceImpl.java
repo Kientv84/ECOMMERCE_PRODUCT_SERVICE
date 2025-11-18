@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -57,9 +58,15 @@ public class RedisServiceImpl implements RedisService {
     }
 
     @Override
-    public void deleteByKeys(@NotNull String... keys) {
-        redisTemplate.delete(java.util.Arrays.asList(keys));
+    public void deleteByKeys(@NotNull String... patternsOrKeys) {
+        for (String pattern : patternsOrKeys) {
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        }
     }
+
 
     @Override
     public <T> void setValue(String key, T data) {

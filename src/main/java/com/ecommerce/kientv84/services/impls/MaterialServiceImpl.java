@@ -3,16 +3,21 @@ package com.ecommerce.kientv84.services.impls;
 import com.ecommerce.kientv84.commons.EnumError;
 import com.ecommerce.kientv84.dtos.request.MaterialRequest;
 import com.ecommerce.kientv84.dtos.request.MaterialUpdateRequest;
+import com.ecommerce.kientv84.dtos.request.search.material.MaterialSearchRequest;
 import com.ecommerce.kientv84.dtos.response.CollectionResponse;
 import com.ecommerce.kientv84.dtos.response.MaterialResponse;
+import com.ecommerce.kientv84.dtos.response.PagedResponse;
 import com.ecommerce.kientv84.entites.CollectionEntity;
 import com.ecommerce.kientv84.entites.MaterialEntity;
 import com.ecommerce.kientv84.exceptions.ServiceException;
 import com.ecommerce.kientv84.mappers.MaterialMapper;
 import com.ecommerce.kientv84.respositories.MaterialRepository;
 import com.ecommerce.kientv84.services.MaterialService;
+import com.ecommerce.kientv84.services.RedisService;
+import com.ecommerce.kientv84.services.UploadFileProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,16 +27,27 @@ import java.util.UUID;
 public class MaterialServiceImpl implements MaterialService {
     private final MaterialRepository materialRepository;
     private final MaterialMapper materialMapper;
+    private final RedisService redisService;
+    private final UploadFileProvider uploadFileProvider;
 
     @Override
-    public List<MaterialResponse> getAllMaterial() {
-        try {
-            List<MaterialResponse> responses = materialRepository.findAll().stream().map(material -> materialMapper.mapToMaterialResponse(material)).toList();
+    public PagedResponse<MaterialResponse> getAllMaterial(MaterialSearchRequest req) {
+        return null;
+    }
 
-            return responses;
-        } catch (Exception e) {
-            throw new ServiceException(EnumError.COLLECTION_ERR_GET, "collection.get.error");
-        }
+    @Override
+    public List<MaterialResponse> searchMaterialSuggestion(String q, int limit) {
+        return List.of();
+    }
+
+    @Override
+    public MaterialResponse uploadThumbnail(UUID id, MultipartFile thumbnailUrl) {
+        return null;
+    }
+
+    @Override
+    public MaterialResponse deleteThumbnailUrl(UUID uuid) {
+        return null;
     }
 
     @Override

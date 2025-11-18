@@ -3,6 +3,8 @@ package com.ecommerce.kientv84.services.impls;
 import com.ecommerce.kientv84.commons.EnumError;
 import com.ecommerce.kientv84.dtos.request.SubCategoryRequest;
 import com.ecommerce.kientv84.dtos.request.SubCategoryUpdateRequest;
+import com.ecommerce.kientv84.dtos.request.search.subCategory.SubCategorySearchRequest;
+import com.ecommerce.kientv84.dtos.response.PagedResponse;
 import com.ecommerce.kientv84.dtos.response.SubCategoryResponse;
 import com.ecommerce.kientv84.entites.CategoryEntity;
 import com.ecommerce.kientv84.entites.SubCategoryEntity;
@@ -10,9 +12,12 @@ import com.ecommerce.kientv84.exceptions.ServiceException;
 import com.ecommerce.kientv84.mappers.SubCategoryMapper;
 import com.ecommerce.kientv84.respositories.CategoryRepository;
 import com.ecommerce.kientv84.respositories.SubCategoryRepository;
+import com.ecommerce.kientv84.services.RedisService;
 import com.ecommerce.kientv84.services.SubCategoryService;
+import com.ecommerce.kientv84.services.UploadFileProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Set;
@@ -26,17 +31,27 @@ public class SubCategoryServiceImpl implements SubCategoryService {
     private final SubCategoryMapper subCategoryMapper;
     private final SubCategoryRepository subCategoryRepository;
     private final CategoryRepository categoryRepository;
+    private final RedisService redisService;
+    private final UploadFileProvider uploadFileProvider;
 
     @Override
-    public List<SubCategoryResponse> getAllSubCategory() {
-        try {
-            List<SubCategoryResponse> responses = subCategoryRepository.findAll().stream().map(sub -> subCategoryMapper.mapToSubCategoryResponse(sub)).toList();
+    public PagedResponse<SubCategoryResponse> getAllSubCategory(SubCategorySearchRequest req) {
+        return null;
+    }
 
-            return responses;
+    @Override
+    public List<SubCategoryResponse> searchSubCategorySuggestion(String q, int limit) {
+        return List.of();
+    }
 
-        } catch (Exception e) {
-            throw new ServiceException(EnumError.SUB_CATE_ERR_GET, "sub.category.get.error");
-        }
+    @Override
+    public SubCategoryResponse uploadThumbnail(UUID id, MultipartFile thumbnailUrl) {
+        return null;
+    }
+
+    @Override
+    public SubCategoryResponse deleteThumbnailUrl(UUID uuid) {
+        return null;
     }
 
     @Override

@@ -18,7 +18,7 @@ public interface CategoryService {
 
     CategoryResponse crateCategory(CategoryRequest categoryRequest);
 
-    List<CategoryResponse> searchUserSuggestion(String q, int limit);
+    List<CategoryResponse> searchCategorySuggestion(String q, int limit);
 
     CategoryResponse getCategoryById(UUID id);
 

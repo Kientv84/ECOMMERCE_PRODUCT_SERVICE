@@ -32,7 +32,7 @@ public class CategoryController {
     @GetMapping("/categories/suggestion")
     public ResponseEntity<List<CategoryResponse>> getUserSuggestions(@RequestParam String q,
                                                                   @RequestParam(defaultValue = "5") int limit) {
-        return ResponseEntity.ok(categoryService.searchUserSuggestion(q, limit));
+        return ResponseEntity.ok(categoryService.searchCategorySuggestion(q, limit));
     }
 
     @PostMapping("/category")

@@ -1,5 +1,7 @@
 package com.ecommerce.kientv84.controller;
 
+import com.ecommerce.kientv84.dtos.response.CollectionResponse;
+import com.ecommerce.kientv84.dtos.response.PagedResponse;
 import com.ecommerce.kientv84.entites.RoleEntity;
 import com.ecommerce.kientv84.dtos.response.ResponeResult;
 import com.ecommerce.kientv84.services.RoleService;
@@ -21,27 +23,27 @@ public class RoleController {
 
     private final RoleService roleService;
 
-    @GetMapping("/getAll")
+    @PostMapping("/roles")
     public ResponseEntity<List<RoleEntity>> getAllRole() {
         return  ResponseEntity.ok(roleService.getAllRole());
     }
 
-    @GetMapping("/getById/{id}")
+    @GetMapping("/role/{id}")
     public ResponseEntity<RoleEntity> getById(@PathVariable Long id) {
         return ResponseEntity.ok(roleService.getById(id));
     }
 
-    @PostMapping("/create")
+    @PostMapping("/role")
     public ResponseEntity<RoleEntity> createRole(@RequestBody RoleEntity role) {
         return ResponseEntity.ok(roleService.createRole(role));
     }
 
-    @PostMapping("/update/{id}")
+    @PostMapping("/role/{id}")
     public ResponseEntity<RoleEntity> updateRole(@PathVariable Long id, @RequestBody RoleEntity updateData) {
         return ResponseEntity.ok(roleService.updateRole(id, updateData));
     }
 
-    @PostMapping("/delete") //Tại sao sd post mà không dùng delete method
+    @PostMapping("/roles") //Tại sao sd post mà không dùng delete method
     //POST là method luôn mong đợi có body. Nên khi: chọn Body → raw → JSON
     // ==> Postman tự động gán Content-Type: application/json vào header để yêu cầu body!!!
     public ResponseEntity<Boolean> deleteRole(@RequestBody List<Long> ids) {
