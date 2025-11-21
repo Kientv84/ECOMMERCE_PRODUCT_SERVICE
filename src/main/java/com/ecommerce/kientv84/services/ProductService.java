@@ -1,5 +1,6 @@
 package com.ecommerce.kientv84.services;
 
+import com.ecommerce.kientv84.dtos.request.DeleteImagesRequest;
 import com.ecommerce.kientv84.dtos.request.ProductRequest;
 import com.ecommerce.kientv84.dtos.request.ProductUpdateRequest;
 import com.ecommerce.kientv84.dtos.request.search.product.ProductSearchRequest;
@@ -29,7 +30,7 @@ public interface ProductService {
 
     String generateNameProduct(ProductEntity productEntity);
 
-    ProductResponse uploadThumbnail(UUID id, MultipartFile thumbnailUrl);
+    ProductResponse uploadImages(UUID id,List<MultipartFile> file);
 
-    ProductResponse deleteThumbnailUrl(UUID uuid);
+    ProductResponse deleteImages(UUID productId, List<Integer> sortOrders);
 }

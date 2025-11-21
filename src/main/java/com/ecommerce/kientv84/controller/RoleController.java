@@ -23,7 +23,7 @@ public class RoleController {
 
     private final RoleService roleService;
 
-    @PostMapping("/roles")
+    @GetMapping("/roles")
     public ResponseEntity<List<RoleEntity>> getAllRole() {
         return  ResponseEntity.ok(roleService.getAllRole());
     }

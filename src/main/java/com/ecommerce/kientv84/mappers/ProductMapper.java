@@ -10,6 +10,8 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
 
+    @Mapping(target = "status", source = "status")
+    @Mapping(target = "images", source = "images")
     ProductResponse mapToProductResponse(ProductEntity productEntity);
 
     BrandObjectResponse mapToProductBrandResponse(BrandEntity brandEntity);

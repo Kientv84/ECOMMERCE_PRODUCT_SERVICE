@@ -164,7 +164,6 @@ INSERT INTO product_entity (
     care_instruction,
     count_in_stock,
     status,
-    thumbnail_url,
     rating_average,
     rating_count,
     created_by,
@@ -186,7 +185,6 @@ VALUES (
     'Machine wash cold',
     50,
     'active',
-    'https://cdn.gymshark.com/products/apex-seamless-tshirt.jpg',
     4.8,
     120,
     'SYSTEM',
@@ -194,10 +192,34 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
--- Cập nhật cột document_tsv cho user_entity sau khi insert dữ liệu mẫu
-UPDATE user_entity
-SET document_tsv = to_tsvector(
-    'simple',
-    coalesce(user_name,'') || ' ' || coalesce(user_email,'') || ' ' || coalesce(user_phone_number,'')
-);
+-- 9. Thêm dữ liệu mẫu cho bảng product_image_entity
+INSERT INTO product_image_entity (
+    product_id,
+    image_url,
+    sort_order
+)
+VALUES
+       (
+           (SELECT id FROM product_entity WHERE product_code = 'APEX-TSHIRT-001' LIMIT 1),
+           'https://cdn.example.com/image1.jpg',
+           1
+       ),
+       (
+           (SELECT id FROM product_entity WHERE product_code = 'APEX-TSHIRT-001' LIMIT 1),
+           'https://cdn.example.com/image2.jpg',
+           2
+       ),
+       (
+           (SELECT id FROM product_entity WHERE product_code = 'APEX-TSHIRT-001' LIMIT 1),
+           'https://cdn.example.com/image3.jpg',
+           3
+       )
+ON CONFLICT DO NOTHING;
+
+---- Cập nhật cột document_tsv cho user_entity sau khi insert dữ liệu mẫu
+--UPDATE user_entity
+--SET document_tsv = to_tsvector(
+--    'simple',
+--    coalesce(user_name,'') || ' ' || coalesce(user_email,'') || ' ' || coalesce(user_phone_number,'')
+--);
 

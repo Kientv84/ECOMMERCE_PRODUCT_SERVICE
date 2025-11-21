@@ -18,7 +18,4 @@ public interface MaterialService {
     MaterialResponse getMaterialById(UUID uuid);
     MaterialResponse updateMaterial(UUID uuid, MaterialUpdateRequest updateData);
     String deleteMaterial(List<UUID> uuids);
-    MaterialResponse uploadThumbnail(UUID id, MultipartFile thumbnailUrl);
-
-    MaterialResponse deleteThumbnailUrl(UUID uuid);
 }

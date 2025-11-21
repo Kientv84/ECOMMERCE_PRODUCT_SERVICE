@@ -195,7 +195,7 @@ public class CategoryServiceImpl implements CategoryService {
 
             log.info("Cache invalidated for key {}", key);
 
-            return  categoryMapper.mapToCategoryResponse(category);
+            return  categoryMapper.mapToCategoryResponse(saved);
         } catch (ServiceException e) {
             throw e;
         }

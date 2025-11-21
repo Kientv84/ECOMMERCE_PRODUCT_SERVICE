@@ -57,16 +57,4 @@ public class MaterialController {
         return materialService.deleteMaterial(uuids);
     }
 
-    @PostMapping("/material/thumbnail_url/{id}")
-    public ResponseEntity<MaterialResponse> uploadThumbnail(
-            @PathVariable UUID id,
-            @RequestParam("thumbnail_url") MultipartFile thumbnailUrl
-    ) {
-        return ResponseEntity.ok(materialService.uploadThumbnail(id, thumbnailUrl));
-    }
-
-    @DeleteMapping("/material/thumbnail_url/{id}")
-    public ResponseEntity<MaterialResponse> deleteThumbnailUrl(@PathVariable UUID id) {
-        return ResponseEntity.ok(materialService.deleteThumbnailUrl(id));
-    }
 }

@@ -15,6 +15,7 @@ import com.ecommerce.kientv84.dtos.response.CollectionResponse;
 import com.ecommerce.kientv84.dtos.response.CollectionResponse;
 import com.ecommerce.kientv84.entites.CategoryEntity;
 import com.ecommerce.kientv84.entites.CollectionEntity;
+import com.ecommerce.kientv84.entites.MaterialEntity;
 import com.ecommerce.kientv84.exceptions.ServiceException;
 import com.ecommerce.kientv84.mappers.CollectionMapper;
 import com.ecommerce.kientv84.respositories.CollectionRepository;
@@ -187,13 +188,15 @@ public class CollectionServiceImpl implements CollectionService {
                 collectionEntity.setDescription(updateData.getDescription());
             }
 
+            CollectionEntity saved = collectionRepository.save(collectionEntity);
+
             // Invalidate cache
 
             redisService.deleteByKeys("collection:" + uuid, "collections:list:*");
 
             log.info("Cache invalidated for key collection {}", uuid);
 
-            return collectionMapper.mapToCollectionResponse(collectionEntity);
+            return collectionMapper.mapToCollectionResponse(saved);
 
         } catch (ServiceException e) {
             throw e;
@@ -214,7 +217,6 @@ public class CollectionServiceImpl implements CollectionService {
             if ( foundIds.isEmpty()) {
                 throw new ServiceException(EnumError.COLLECTION_ERR_NOT_FOUND, "collection.delete.notfound");
             }
-
 
             // Soft delete:  update status
             foundIds.forEach(col -> col.setStatus(StatusEnum.DELETED.getStatus()));

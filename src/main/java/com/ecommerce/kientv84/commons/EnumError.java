@@ -56,6 +56,10 @@ public enum EnumError {
     PRO_ERR_DEL_EM("PRO-DL-E", "List ids to delete is empty", HttpStatus.BAD_REQUEST),
     PRO_ERR_NOT_FOUND("PRO_EL_NF", "Not found user with id", HttpStatus.BAD_REQUEST),
 
+    //----------- PRODUCT IMAGE------------
+    INVALID_REQUEST("PRO-INVALID_REQUEST", "No sortOrders provided", HttpStatus.BAD_REQUEST),
+    IMAGE_NOT_FOUND("IMAGE_NOT_FOUND", "No images found for given sortOrders", HttpStatus.BAD_REQUEST),
+
     //----------- CATEGORY ------------
     CATE_ERR_GET("CATE-GA", "Have error in process get", HttpStatus.BAD_REQUEST),
     CATE_ERR_DEL_EM("CATE-DL-E", "List ids to delete is empty", HttpStatus.BAD_REQUEST),

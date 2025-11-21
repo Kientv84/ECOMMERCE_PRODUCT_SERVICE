@@ -11,7 +11,7 @@ import lombok.*;
 @Builder
 public class MaterialSearchRequest {
     private MaterialSearchOption searchOption;
-    private MaterialSearchRequest searchModel;
+    private MaterialSearchModel searchModel;
 
     public String hashKey() {
         return "option:" + searchOption.hashKey() + "|filter:" + searchModel.hashKey();

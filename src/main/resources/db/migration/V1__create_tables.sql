@@ -117,8 +117,7 @@ CREATE TABLE IF NOT EXISTS product_entity (
     fit_type VARCHAR(100),
     care_instruction VARCHAR(255),
     count_in_stock INTEGER,
-    status VARCHAR(100),
-    thumbnail_url TEXT,
+    status VARCHAR(50),
     rating_average DOUBLE PRECISION,
     rating_count INTEGER,
 
@@ -131,6 +130,19 @@ CREATE TABLE IF NOT EXISTS product_entity (
 CREATE INDEX IF NOT EXISTS idx_product_category ON product_entity (category_id);
 CREATE INDEX IF NOT EXISTS idx_product_brand ON product_entity (brand_id);
 CREATE INDEX IF NOT EXISTS idx_product_status ON product_entity (status);
+
+-- ===============================
+-- PRODUCT IMAGE (NEW)
+-- ===============================
+CREATE TABLE IF NOT EXISTS product_image_entity (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID NOT NULL REFERENCES product_entity(id) ON DELETE CASCADE,
+    image_url TEXT NOT NULL,
+    sort_order INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_image_product ON product_image_entity(product_id);
+
 
 -- 1. Thêm cột tsvector
 ALTER TABLE user_entity

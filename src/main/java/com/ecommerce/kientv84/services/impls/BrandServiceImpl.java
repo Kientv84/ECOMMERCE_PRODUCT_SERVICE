@@ -53,7 +53,7 @@ public class BrandServiceImpl implements BrandService {
     @Override
     public PagedResponse<BrandResponse> searchUsers(BrandSearchRequest req) {
         log.info("Get all brand api calling...");
-        String key = "brand:list:" + req.hashKey();
+        String key = "brands:list:" + req.hashKey();
         try {
             // 1. check brand
             PagedResponse<BrandResponse> cached =
@@ -195,11 +195,11 @@ public class BrandServiceImpl implements BrandService {
             String key = "brand:" + id;
             redisService.deleteByKey(key);
 
-            redisService.deleteByKeys("brand:" + id, "brand:list:*");
+            redisService.deleteByKeys("brand:" + id, "brands:list:*");
 
             log.info("Cache invalidated for key {}", key);
 
-            return  brandMapper.mapToBrandResponse(brand);
+            return  brandMapper.mapToBrandResponse(saved);
 
         } catch (ServiceException e) {
             throw e ;

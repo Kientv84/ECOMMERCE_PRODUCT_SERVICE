@@ -1,5 +1,6 @@
 package com.ecommerce.kientv84.controller;
 
+import com.ecommerce.kientv84.dtos.request.DeleteImagesRequest;
 import com.ecommerce.kientv84.dtos.request.ProductRequest;
 import com.ecommerce.kientv84.dtos.request.ProductUpdateRequest;
 import com.ecommerce.kientv84.dtos.request.search.product.ProductSearchRequest;
@@ -24,7 +25,7 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping("/items/filter")
-    public ResponseEntity<PagedResponse<ProductResponse>> getAllProduct(ProductSearchRequest req) {
+    public ResponseEntity<PagedResponse<ProductResponse>> getAllProduct(@RequestBody ProductSearchRequest req) {
         return ResponseEntity.ok(productService.getAllProduct(req));
     }
 
@@ -50,20 +51,23 @@ public class ProductController {
     }
 
     @PostMapping("/items")
-    public ResponseEntity<String> updateProductById( @RequestBody List<UUID> uuids) {
+    public ResponseEntity<String> deleteProduct( @RequestBody List<UUID> uuids) {
         return ResponseEntity.ok(productService.deleteProduct(uuids));
     }
 
-    @PostMapping("/item/thumbnail_url/{id}")
-    public ResponseEntity<ProductResponse> uploadThumbnail(
+    @PostMapping("/item/images/{id}")
+    public ResponseEntity<?> uploadImages(
             @PathVariable UUID id,
-            @RequestParam("thumbnail_url") MultipartFile thumbnailUrl
+            @RequestParam("images") List<MultipartFile> files
     ) {
-        return ResponseEntity.ok(productService.uploadThumbnail(id, thumbnailUrl));
+        return ResponseEntity.ok(productService.uploadImages(id, files));
     }
 
-    @DeleteMapping("/item/thumbnail_url/{id}")
-    public ResponseEntity<ProductResponse> deleteThumbnailUrl(@PathVariable UUID id) {
-        return ResponseEntity.ok(productService.deleteThumbnailUrl(id));
+    @DeleteMapping("/item/images/{id}")
+    public ResponseEntity<ProductResponse> deleteImages(
+            @PathVariable UUID id,
+            @RequestBody DeleteImagesRequest request
+    ) {
+        return ResponseEntity.ok(productService.deleteImages(id, request.getSortOrders()));
     }
 }

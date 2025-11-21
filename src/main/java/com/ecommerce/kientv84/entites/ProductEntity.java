@@ -1,4 +1,5 @@
 package com.ecommerce.kientv84.entites;
+import com.ecommerce.kientv84.commons.StatusEnum;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +13,9 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -36,7 +39,7 @@ public class ProductEntity {
 
 //    @Column(name ="product_code", nullable = false, length = 255)
 
-    @Column(name ="product_code", length = 255)
+    @Column(name ="product_code",nullable = false , length = 255)
     private String productCode;
 
     @Column(columnDefinition = "TEXT")
@@ -80,10 +83,11 @@ public class ProductEntity {
     @Column(name ="count_in_stock")
     private Integer stock;
 
-    private String status; // ACTIVE, INACTIVE, OUT_OF_STOCK
+    @Column(name = "status", length = 50)
+    private String status; // ACTIVE / INACTIVE
 
-    @Column(name ="thumbnail_url")
-    private String thumbnailUrl; // Ảnh chính
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ProductImageEntity> images = new ArrayList<>();
 
     @Column(name ="rating_average")
     private Double ratingAverage; // Trung bình đánh giá
@@ -91,19 +95,19 @@ public class ProductEntity {
     @Column(name ="rating_count")
     private Integer ratingCount; // Số lượng review
 
-    // ====== Metadata ======
+    // ===== Metadata =====
     @CreatedDate
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name ="create_date")
+    @Column(name ="create_date", updatable = false)
     private Date createdDate;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @LastModifiedDate
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name ="update_date")
     private Date updatedDate;
 
     @CreatedBy
-    @Column(name ="created_by")
+    @Column(name ="created_by", updatable = false)
     private String createdBy;
 
     @LastModifiedBy

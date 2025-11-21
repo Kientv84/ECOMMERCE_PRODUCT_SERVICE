@@ -1,9 +1,17 @@
 package com.ecommerce.kientv84.services.impls;
 
+import com.ecommerce.kientv84.commons.Constant;
 import com.ecommerce.kientv84.commons.EnumError;
+import com.ecommerce.kientv84.commons.StatusEnum;
+import com.ecommerce.kientv84.dtos.request.DeleteImagesRequest;
 import com.ecommerce.kientv84.dtos.request.ProductRequest;
 import com.ecommerce.kientv84.dtos.request.ProductUpdateRequest;
+import com.ecommerce.kientv84.dtos.request.search.brand.BrandSearchModel;
+import com.ecommerce.kientv84.dtos.request.search.brand.BrandSearchOption;
+import com.ecommerce.kientv84.dtos.request.search.product.ProductSearchModel;
+import com.ecommerce.kientv84.dtos.request.search.product.ProductSearchOption;
 import com.ecommerce.kientv84.dtos.request.search.product.ProductSearchRequest;
+import com.ecommerce.kientv84.dtos.response.BrandResponse;
 import com.ecommerce.kientv84.dtos.response.PagedResponse;
 import com.ecommerce.kientv84.dtos.response.ProductResponse;
 import com.ecommerce.kientv84.entites.*;
@@ -14,15 +22,20 @@ import com.ecommerce.kientv84.respositories.*;
 import com.ecommerce.kientv84.services.ProductService;
 import com.ecommerce.kientv84.services.RedisService;
 import com.ecommerce.kientv84.services.UploadFileProvider;
+import com.ecommerce.kientv84.utils.PageableUtils;
+import com.ecommerce.kientv84.utils.SpecificationBuilder;
+import com.fasterxml.jackson.core.type.TypeReference;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -39,26 +52,139 @@ public class ProductServiceImp implements ProductService {
     private final ProductProducer productProducer;
     private final RedisService redisService;
     private final UploadFileProvider uploadFileProvider;
+    private final ProductImageRepository productImageRepository;
 
     @Override
     public PagedResponse<ProductResponse> getAllProduct(ProductSearchRequest req) {
-        return null;
+        log.info("Get all product api calling...");
+        String key = "products:list:" + req.hashKey();
+        try {
+            // 1. check product
+            PagedResponse<ProductResponse> cached =
+                    redisService.getValue(key, new TypeReference<PagedResponse<ProductResponse>>() {});
+
+            if (cached != null) {
+                log.info("Redis read for key {}", key);
+                return cached;
+            }
+
+            ProductSearchOption option = req.getSearchOption() ;
+            ProductSearchModel model = req.getSearchModel();
+
+            List<String> allowedFields = List.of("productName", "createdDate");
+
+            PageRequest pageRequest = PageableUtils.buildPageRequest(
+                    option.getPage(),
+                    option.getSize(),
+                    option.getSort(),
+                    allowedFields,
+                    "createdDate",
+                    Sort.Direction.DESC
+            );
+
+            Specification<ProductEntity> spec = new SpecificationBuilder<ProductEntity>()
+                    .equal("status", model.getStatus())
+                    .likeAnyFieldIgnoreCase(model.getQ(), "productCode")
+                    .build();
+
+            Page<ProductResponse> result = productRepository.findAll(spec, pageRequest)
+                    .map(productMapper::mapToProductResponse);
+
+            PagedResponse<ProductResponse> response = new PagedResponse<>(
+                    result.getNumber(),
+                    result.getSize(),
+                    result.getTotalElements(),
+                    result.getTotalPages(),
+                    result.getContent()
+            );
+
+            redisService.setValue(key, response, Constant.SEARCH_CACHE_TTL);
+
+            log.info("Redis MISS, caching search result for key {}", key);
+
+            return response;
+
+        } catch (Exception e) {
+            throw new ServiceException(EnumError.PRO_ERR_GET, "product.get.error");
+        }
     }
 
-    @Override
-    public List<ProductResponse> searchProductSuggestion(String q, int limit) {
-        return List.of();
+    @Transactional
+    public ProductResponse uploadImages(UUID productId, List<MultipartFile> files) {
+
+        ProductEntity product = productRepository.findById(productId)
+                .orElseThrow(() -> new ServiceException(EnumError.PRO_ERR_DEL_EM, "product.get.error"));
+
+        // Lấy sort lớn nhất hiện tại
+        Integer maxSort = productImageRepository.findMaxSortOrderByProductId(productId);
+        if (maxSort == null) maxSort = 0;
+
+        List<ProductImageEntity> savedImages = new ArrayList<>();
+
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
+
+            // upload cloud
+            String folder = "products/"+productId;
+
+            String uploadedUrl = uploadFileProvider.upload(file, folder);
+
+            ProductImageEntity img = ProductImageEntity.builder()
+                    .product(product)
+                    .imageUrl(uploadedUrl)
+                    .sortOrder(maxSort + i + 1)
+                    .build();
+
+            savedImages.add(productImageRepository.save(img));
+        }
+
+        return productMapper.mapToProductResponse(product);
     }
 
+    @Transactional
     @Override
-    public ProductResponse uploadThumbnail(UUID id, MultipartFile thumbnailUrl) {
-        return null;
+    public ProductResponse deleteImages(UUID productId, List<Integer> sortOrders) {
+
+        if (sortOrders == null || sortOrders.isEmpty()) {
+            throw new ServiceException(EnumError.INVALID_REQUEST);
+        }
+
+        List<ProductImageEntity> imagesToDelete =
+                productImageRepository.findByProductIdAndSortOrderIn(productId, sortOrders);
+
+        if (imagesToDelete.isEmpty()) {
+            throw new ServiceException(EnumError.IMAGE_NOT_FOUND);
+        }
+
+        // Xóa ảnh trên Cloudinary (best-effort)
+        for (ProductImageEntity img : imagesToDelete) {
+            try {
+                uploadFileProvider.deleteFileFromCloudinary(img.getImageUrl());
+            } catch (Exception e) {
+                System.err.println("Failed to delete cloud file: " + img.getImageUrl());
+            }
+        }
+
+        // Xóa ảnh khỏi DB
+        productImageRepository.deleteAll(imagesToDelete);
+
+        // Nếu muốn: reorder lại sortOrder còn lại
+        ProductEntity product = productRepository.findById(productId)
+                .orElseThrow(() -> new ServiceException(EnumError.PRO_ERR_DEL_EM, "product.get.error"));
+
+        List<ProductImageEntity> remainingImages = product.getImages().stream()
+                .sorted(Comparator.comparingInt(i -> i.getSortOrder() == null ? Integer.MAX_VALUE : i.getSortOrder()))
+                .collect(Collectors.toList());
+
+        int order = 1;
+        for (ProductImageEntity img : remainingImages) {
+            img.setSortOrder(order++);
+        }
+        productImageRepository.saveAll(remainingImages);
+
+        return productMapper.mapToProductResponse(product);
     }
 
-    @Override
-    public ProductResponse deleteThumbnailUrl(UUID uuid) {
-        return null;
-    }
 
     @Override
     public ProductResponse createProduct(ProductRequest productRequest) {
@@ -97,7 +223,6 @@ public class ProductServiceImp implements ProductService {
                     .createdBy("ADMIN")
                     .discountPercent(productRequest.getDiscountPercent())
                     .origin(productRequest.getOrigin())
-                    .thumbnailUrl(productRequest.getThumbnailUrl())
                     .ratingAverage(productRequest.getRatingAverage())
                     .createdDate(new Date())
                     .build();
@@ -107,6 +232,10 @@ public class ProductServiceImp implements ProductService {
             productEntity.setProductName(generatedName);
 
             productRepository.save(productEntity);
+
+            // redis
+
+            redisService.deleteByKey("products:list:*");
 
             // Product kafka tạo tồn kho
             productProducer.produceInventoryCreate(productMapper.mapToKafkaInventoryRequest(productEntity));
@@ -122,11 +251,28 @@ public class ProductServiceImp implements ProductService {
 
     @Override
     public ProductResponse getProductById(UUID uuid) {
+
+        log.info("Calling get by id api with product {}", uuid);
+
+        String key = "product:"+uuid;
+
         try {
+            // get from cache
+            ProductResponse cached = redisService.getValue(key, ProductResponse.class);
+
+            if (cached != null) {
+                log.info("Redis get for key: {}", key);
+                return cached;
+            }
+
             ProductEntity productEntity = productRepository.findById(uuid).orElseThrow(() -> new ServiceException(EnumError.PRO_ERR_GET, "product.get.error", new Object[]{}));
 
-            return productMapper.mapToProductResponse(productEntity);
+           ProductResponse response = productMapper.mapToProductResponse(productEntity);
 
+            // storge redis
+            redisService.setValue(key, response, Constant.CACHE_TTL);
+
+            return  response;
         } catch (ServiceException e) {
             //các lỗi business (do bạn chủ động ném ra)
             throw e;
@@ -197,18 +343,20 @@ public class ProductServiceImp implements ProductService {
             if (updateData.getRatingAverage() != null) {
                 productEntity.setRatingAverage(updateData.getRatingAverage());
             }
-            if (updateData.getThumbnailUrl() != null) {
-                productEntity.setThumbnailUrl(updateData.getThumbnailUrl());
-            }
 
             String name = generateNameProduct(productEntity);
 
             productEntity.setProductName(name);
 
-            productRepository.save(productEntity);
+            //save
 
-            return productMapper.mapToProductResponse(productEntity);
+            ProductEntity saved = productRepository.save(productEntity);
 
+            // Invalidate cache
+
+            redisService.deleteByKeys("product:" + uuid, "products:list:*");
+
+            return  productMapper.mapToProductResponse(saved);
 
         } catch (ServiceException e) {
             throw e;
@@ -262,6 +410,12 @@ public class ProductServiceImp implements ProductService {
                 productEntity.getCategory().getCategoryName().trim(),
                 productEntity.getSubCategory().getSubCategoryCode().trim()
         ).trim();
+    }
+
+    @Override
+    public List<ProductResponse> searchProductSuggestion(String q, int limit) {
+        List<ProductEntity> products = productRepository.searchProductdSuggestion(q, limit);
+        return products.stream().map(pro -> productMapper.mapToProductResponse(pro)).toList();
     }
 
 }
