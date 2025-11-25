@@ -10,8 +10,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class CollectionSearchRequest {
-    private CollectionSearchOption searchOption;
-    private CollectionSearchModel searchModel;
+    private CollectionSearchOption searchOption = new CollectionSearchOption();
+    private CollectionSearchModel searchModel = new CollectionSearchModel();
 
     public String hashKey() {
         return "option:" + searchOption.hashKey() + "|filter:" + searchModel.hashKey();

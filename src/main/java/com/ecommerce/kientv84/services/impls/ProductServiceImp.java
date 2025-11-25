@@ -110,36 +110,82 @@ public class ProductServiceImp implements ProductService {
     }
 
     @Transactional
-    public ProductResponse uploadImages(UUID productId, List<MultipartFile> files) {
+    @Override
+    public ProductResponse uploadImages(UUID productId, List<MultipartFile> files, List<Integer> positions) {
+
+        if (files == null || files.isEmpty()) {
+            throw new ServiceException(EnumError.INVALID_REQUEST, "No files uploaded");
+        }
+
+        if (files.size() > 3) {
+            throw new ServiceException(EnumError.INVALID_REQUEST, "Maximum 3 images allowed");
+        }
 
         ProductEntity product = productRepository.findById(productId)
-                .orElseThrow(() -> new ServiceException(EnumError.PRO_ERR_DEL_EM, "product.get.error"));
+                .orElseThrow(() -> new ServiceException(EnumError.PRO_ERR_GET, "product.get.error"));
 
-        // Lấy sort lớn nhất hiện tại
-        Integer maxSort = productImageRepository.findMaxSortOrderByProductId(productId);
-        if (maxSort == null) maxSort = 0;
+        // Load ảnh hiện tại
+        List<ProductImageEntity> currentImages =
+                productImageRepository.findByProductIdOrderBySortOrder(productId);
 
-        List<ProductImageEntity> savedImages = new ArrayList<>();
+        if (currentImages.size() + files.size() > 3 && (positions == null || positions.isEmpty())) {
+            throw new ServiceException(EnumError.INVALID_REQUEST, "Total images cannot exceed 3");
+        }
+
+        List<ProductImageEntity> imagesToSave = new ArrayList<>();
 
         for (int i = 0; i < files.size(); i++) {
+
             MultipartFile file = files.get(i);
 
-            // upload cloud
-            String folder = "products/"+productId;
+            if (file == null || file.isEmpty()) {
+                throw new ServiceException(EnumError.INVALID_REQUEST, "File empty");
+            }
 
+            String folder = "product/" + productId;
             String uploadedUrl = uploadFileProvider.upload(file, folder);
+
+            int sortOrder;
+
+            // Nếu có truyền positions → replace
+            if (positions != null && positions.size() > i) {
+                sortOrder = positions.get(i);
+                if (sortOrder < 1 || sortOrder > 3) {
+                    throw new ServiceException(EnumError.INVALID_REQUEST, "sortOrder must be 1-3");
+                }
+
+                // Xóa ảnh cũ tại vị trí đó (nếu có)
+                productImageRepository.deleteByProductIdAndSortOrderIn(productId, List.of(sortOrder));
+
+            } else {
+                // Nếu không truyền positions → push vào vị trí tiếp theo
+                sortOrder = currentImages.size() + 1;
+                if (sortOrder > 3) {
+                    throw new ServiceException(EnumError.INVALID_REQUEST, "Reached max 3 images");
+                }
+            }
 
             ProductImageEntity img = ProductImageEntity.builder()
                     .product(product)
                     .imageUrl(uploadedUrl)
-                    .sortOrder(maxSort + i + 1)
+                    .sortOrder(sortOrder)
                     .build();
 
-            savedImages.add(productImageRepository.save(img));
+            imagesToSave.add(img);
         }
+
+        // Lưu các ảnh mới
+        productImageRepository.saveAll(imagesToSave);
+
+        // Reorder lại 1–2–3 để khớp tuyệt đối
+        reorderImages(productId);
+
+        // Reload product
+        product = productRepository.findById(productId).get();
 
         return productMapper.mapToProductResponse(product);
     }
+
 
     @Transactional
     @Override
@@ -168,22 +214,29 @@ public class ProductServiceImp implements ProductService {
         // Xóa ảnh khỏi DB
         productImageRepository.deleteAll(imagesToDelete);
 
-        // Nếu muốn: reorder lại sortOrder còn lại
+        // === QUAN TRỌNG ===
+        // Đảm bảo Hibernate thật sự delete trong DB
+        productImageRepository.flush();
+
+        // Load lại product để không dùng persistence context cũ
         ProductEntity product = productRepository.findById(productId)
                 .orElseThrow(() -> new ServiceException(EnumError.PRO_ERR_DEL_EM, "product.get.error"));
 
-        List<ProductImageEntity> remainingImages = product.getImages().stream()
-                .sorted(Comparator.comparingInt(i -> i.getSortOrder() == null ? Integer.MAX_VALUE : i.getSortOrder()))
-                .collect(Collectors.toList());
+        // Lấy danh sách ảnh còn lại từ DB, không dùng product.getImages()
+        List<ProductImageEntity> remainingImages =
+                productImageRepository.findByProductIdOrderBySortOrder(productId);
 
+        // Reorder lại sortOrder
         int order = 1;
         for (ProductImageEntity img : remainingImages) {
             img.setSortOrder(order++);
         }
+
         productImageRepository.saveAll(remainingImages);
 
         return productMapper.mapToProductResponse(product);
     }
+
 
 
     @Override
@@ -416,6 +469,20 @@ public class ProductServiceImp implements ProductService {
     public List<ProductResponse> searchProductSuggestion(String q, int limit) {
         List<ProductEntity> products = productRepository.searchProductdSuggestion(q, limit);
         return products.stream().map(pro -> productMapper.mapToProductResponse(pro)).toList();
+    }
+
+
+    // sub funciton
+    private void reorderImages(UUID productId) {
+        List<ProductImageEntity> imgs = productImageRepository
+                .findByProductIdOrderBySortOrder(productId);
+
+        int order = 1;
+        for (ProductImageEntity img : imgs) {
+            img.setSortOrder(order++);
+        }
+
+        productImageRepository.saveAll(imgs);
     }
 
 }

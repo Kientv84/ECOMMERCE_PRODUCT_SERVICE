@@ -10,8 +10,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class SubCategorySearchRequest {
-    private SubCategorySearchOption searchOption;
-    private SubCategorySearchModel searchModel;
+    private SubCategorySearchOption searchOption = new SubCategorySearchOption();
+    private SubCategorySearchModel searchModel = new SubCategorySearchModel();
 
     public String hashKey() {
         return "option:" + searchOption.hashKey() + "|filter:" + searchModel.hashKey();

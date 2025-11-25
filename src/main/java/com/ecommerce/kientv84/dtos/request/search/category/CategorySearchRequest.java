@@ -8,8 +8,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class CategorySearchRequest {
-    private CategorySearchOption searchOption;
-    private CategorySearchModel searchModel;
+    private CategorySearchOption searchOption = new CategorySearchOption();
+    private CategorySearchModel searchModel = new CategorySearchModel();
 
     public String hashKey() {
         return "option:" + searchOption.hashKey() + "|filter:" + searchModel.hashKey();

@@ -58,9 +58,10 @@ public class ProductController {
     @PostMapping("/item/images/{id}")
     public ResponseEntity<?> uploadImages(
             @PathVariable UUID id,
-            @RequestParam("images") List<MultipartFile> files
+            @RequestParam("images") List<MultipartFile> files,
+            @RequestParam(required = false) List<Integer> positions // optional: vị trí muốn ghi đè
     ) {
-        return ResponseEntity.ok(productService.uploadImages(id, files));
+        return ResponseEntity.ok(productService.uploadImages(id, files, positions));
     }
 
     @DeleteMapping("/item/images/{id}")

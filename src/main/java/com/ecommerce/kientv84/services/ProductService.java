@@ -30,7 +30,7 @@ public interface ProductService {
 
     String generateNameProduct(ProductEntity productEntity);
 
-    ProductResponse uploadImages(UUID id,List<MultipartFile> file);
+    ProductResponse uploadImages(UUID id,List<MultipartFile> file, List<Integer> positions );
 
     ProductResponse deleteImages(UUID productId, List<Integer> sortOrders);
 }

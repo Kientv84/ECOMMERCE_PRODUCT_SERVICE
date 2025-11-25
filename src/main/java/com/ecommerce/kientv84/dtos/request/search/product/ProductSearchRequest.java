@@ -10,8 +10,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class ProductSearchRequest {
-    private ProductSearchOption searchOption;
-    private ProductSearchModel searchModel;
+    private ProductSearchOption searchOption = new ProductSearchOption();
+    private ProductSearchModel searchModel = new ProductSearchModel();
 
     public String hashKey() {
         return "option:" + searchOption.hashKey() + "|filter:" + searchModel.hashKey();
