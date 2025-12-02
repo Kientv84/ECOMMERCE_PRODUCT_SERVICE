@@ -467,7 +467,7 @@ public class ProductServiceImp implements ProductService {
 
     @Override
     public List<ProductResponse> searchProductSuggestion(String q, int limit) {
-        List<ProductEntity> products = productRepository.searchProductdSuggestion(q, limit);
+        List<ProductEntity> products = productRepository.searchProductSuggestion(q, limit);
         return products.stream().map(pro -> productMapper.mapToProductResponse(pro)).toList();
     }
 

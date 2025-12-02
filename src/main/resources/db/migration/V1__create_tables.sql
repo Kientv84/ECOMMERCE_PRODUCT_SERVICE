@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS product_entity (
     material_id UUID REFERENCES material_entity(id) ON DELETE SET NULL,
 
     base_price NUMERIC(18,2),
-    discount_percent REAL,
+    discount_percent NUMERIC(5,2),
     origin VARCHAR(255),
     fit_type VARCHAR(100),
     care_instruction VARCHAR(255),
@@ -143,61 +143,151 @@ CREATE TABLE IF NOT EXISTS product_image_entity (
 
 CREATE INDEX IF NOT EXISTS idx_product_image_product ON product_image_entity(product_id);
 
+-- ==========================
+-- USER_ENTITY FULL-TEXT SEARCH SETUP
+-- ==========================
 
--- 1. Thêm cột tsvector
+-- 1. Thêm cột tsvector (nếu chưa có)
 ALTER TABLE user_entity
-ADD COLUMN document_tsv tsvector;
+ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 
--- 2. Cập nhật dữ liệu hiện có
+-- 2. Cập nhật dữ liệu hiện có với unaccent + lower
 UPDATE user_entity
 SET document_tsv = to_tsvector(
     'simple',
-    coalesce(user_name,'') || ' ' || coalesce(user_email,'') || ' ' || coalesce(user_phone_number,'')
+    coalesce(unaccent(lower(user_name)),'') || ' ' ||
+    coalesce(unaccent(lower(user_email)),'') || ' ' ||
+    coalesce(unaccent(lower(user_phone_number)),'')
 );
 
--- 3. Tạo GIN index để search nhanh
-CREATE INDEX idx_user_document_tsv ON user_entity USING GIN(document_tsv);
+-- 3. Tạo GIN index để search nhanh (nếu chưa có)
+CREATE INDEX IF NOT EXISTS idx_user_document_tsv
+ON user_entity USING GIN(document_tsv);
 
--- 4. Tạo function trigger để cập nhật tự động khi insert/update
-CREATE FUNCTION user_tsv_trigger() RETURNS trigger AS $$
+-- 4. Tạo function trigger để tự động cập nhật khi insert/update
+CREATE OR REPLACE FUNCTION user_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-        coalesce(NEW.user_name,'') || ' ' || coalesce(NEW.user_email,'') || ' ' || coalesce(NEW.user_phone_number,'')
+        coalesce(unaccent(lower(NEW.user_name)),'') || ' ' ||
+        coalesce(unaccent(lower(NEW.user_email)),'') || ' ' ||
+        coalesce(unaccent(lower(NEW.user_phone_number)),'')
     );
     RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
 
--- 5. Tạo trigger gắn vào bảng
-CREATE TRIGGER tsvectorupdate_user BEFORE INSERT OR UPDATE
-ON user_entity FOR EACH ROW EXECUTE PROCEDURE user_tsv_trigger();
+-- 5. Tạo trigger gắn vào bảng (BEFORE INSERT OR UPDATE)
+DROP TRIGGER IF EXISTS tsvectorupdate_user ON user_entity;
+
+CREATE TRIGGER tsvectorupdate_user
+BEFORE INSERT OR UPDATE ON user_entity
+FOR EACH ROW
+EXECUTE FUNCTION user_tsv_trigger();
+
+-- ==========================
+-- USER_ENTITY SEARCH SUGGEST FUNCTION
+-- ==========================
+
+-- Tạo function để gọi từ API hoặc query trực tiếp
+CREATE OR REPLACE FUNCTION user_search_suggest(input_text text, limit_count int DEFAULT 5)
+
+RETURNS TABLE (
+    user_id uuid,
+    user_name text,
+    user_email text,
+    user_phone_number text,
+    rank float
+) AS $$
+DECLARE
+    q text;
+BEGIN
+    -- Chuẩn hóa input: unaccent + lower
+    q := unaccent(lower(input_text));
+
+    RETURN QUERY
+    SELECT
+        user_id,
+        user_name,
+        user_email,
+        user_phone_number,
+        ts_rank(document_tsv, to_tsquery('simple', q || ':*')) AS rank
+    FROM user_entity
+    WHERE document_tsv @@ to_tsquery('simple', q || ':*')
+    ORDER BY rank DESC
+    LIMIT limit_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ==========================
+-- Cách dùng:
+-- SELECT * FROM user_search_suggest('ki', 10);
+-- ==========================
+
 
 -- ===== BRAND ENTITY SEARCH =====
 
 ALTER TABLE brand_entity
-ADD COLUMN document_tsv tsvector;
+ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 
 UPDATE brand_entity
 SET document_tsv = to_tsvector(
     'simple',
-    coalesce(brand_name,'') || ' ' || coalesce(brand_code,'') || ' ' || coalesce(description,'')
+    coalesce(unaccent(lower(brand_name)),'') || ' ' ||
+    coalesce(unaccent(lower(brand_code)),'') || ' ' ||
+    coalesce(unaccent(lower(description)),'')
 );
 
-CREATE INDEX idx_brand_document_tsv ON brand_entity USING GIN(document_tsv);
 
-CREATE FUNCTION brand_tsv_trigger() RETURNS trigger AS $$
+CREATE INDEX IF NOT EXISTS idx_brand_document_tsv ON brand_entity USING GIN(document_tsv);
+
+CREATE OR REPLACE FUNCTION brand_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-        coalesce(NEW.brand_name,'') || ' ' || coalesce(NEW.brand_code,'') || ' ' || coalesce(NEW.description,'')
+         coalesce(unaccent(lower(NEW.brand_name)),'') || ' ' ||
+         coalesce(unaccent(lower(NEW.brand_code)),'') || ' ' ||
+         coalesce(unaccent(lower(NEW.description)),'')
     );
     RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER tsvectorupdate_brand BEFORE INSERT OR UPDATE
-ON brand_entity FOR EACH ROW EXECUTE PROCEDURE brand_tsv_trigger();
+DROP TRIGGER IF EXISTS tsvectorupdate_brand ON brand_entity;
+
+CREATE TRIGGER tsvectorupdate_brand
+BEFORE INSERT OR UPDATE ON brand_entity
+FOR EACH ROW
+EXECUTE FUNCTION brand_tsv_trigger();
+
+CREATE OR REPLACE FUNCTION brand_search_suggest( input_text text, limit_count int DEFAULT 5)
+
+RETURNS TABLE (
+    brand_id uuid,
+    brand_name text,
+    brand_code text,
+    description text,
+    rank float
+) AS $$ DECLARE
+    q text;
+BEGIN
+    q:=unaccent(lower(input_text));
+
+   RETURN QUERY
+   SELECT
+         brand_id,
+         brand_name,
+         brand_code,
+         description,
+         ts_rank(document_tsv, to_tsquery('simple', q || ':*')) AS rank
+        FROM brand_entity
+        WHERE document_tsv @@ to_tsquery('simple', q || ':*')
+        ORDER BY rank DESC
+        LIMIT limit_count;
+    END;
+    $$ LANGUAGE plpgsql;
+
+
 
 -- ===== ROLE ENTITY SEARCH =====
 
@@ -229,139 +319,327 @@ ON role_entity FOR EACH ROW EXECUTE PROCEDURE role_tsv_trigger();
 -- ===== CATEGORY ENTITY SEARCH =====
 
 ALTER TABLE category_entity
-ADD COLUMN document_tsv tsvector;
+ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 
 UPDATE category_entity
 SET document_tsv = to_tsvector(
     'simple',
-    coalesce(category_name,'') || ' ' || coalesce(category_code,'') || ' ' || coalesce(description,'')
+     coalesce(unaccent(lower(category_name)),'') || ' ' ||
+     coalesce(unaccent(lower(category_code)),'') || ' ' ||
+     coalesce(unaccent(lower(description)),'')
 );
 
-CREATE INDEX idx_category_document_tsv ON category_entity USING GIN(document_tsv);
+CREATE INDEX IF NOT EXISTS idx_category_document_tsv ON category_entity USING GIN(document_tsv);
 
 CREATE FUNCTION category_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-        coalesce(NEW.category_name,'') || ' ' || coalesce(NEW.category_code,'') || ' ' || coalesce(NEW.description,'')
+        coalesce(unaccent(lower(NEW.category_name)),'') || ' ' ||
+        coalesce(unaccent(lower(NEW.category_code)),'') || ' ' ||
+        coalesce(unaccent(lower(NEW.description)),'')
     );
     RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER tsvectorupdate_category BEFORE INSERT OR UPDATE
-ON category_entity FOR EACH ROW EXECUTE PROCEDURE category_tsv_trigger();
 
--- ===== SUB CATEGORY ENTITY SEARCH =====
+DROP TRIGGER IF EXISTS tsvectorupdate_category ON category_entity;
 
-ALTER TABLE sub_category_entity
-ADD COLUMN document_tsv tsvector;
+CREATE TRIGGER tsvectorupdate_category
+BEFORE INSERT OR UPDATE ON category_entity
+FOR EACH ROW
+EXECUTE FUNCTION category_tsv_trigger();
 
-UPDATE sub_category_entity
-SET document_tsv = to_tsvector(
-    'simple',
-    coalesce(sub_category_name,'') || ' ' || coalesce(sub_category_code,'') || ' ' || coalesce(description,'')
-);
+CREATE OR REPLACE FUNCTION category_search_suggest( input_text text, limit_count int DEFAULT 5)
 
-CREATE INDEX idx_sub_category_document_tsv ON sub_category_entity USING GIN(document_tsv);
-
-CREATE FUNCTION sub_category_tsv_trigger() RETURNS trigger AS $$
+RETURNS TABLE (
+    category_id uuid,
+    category_name text,
+    category_code text,
+    description text,
+    rank float
+) AS $$ DECLARE
+    q text;
 BEGIN
-    NEW.document_tsv := to_tsvector(
-        'simple',
-        coalesce(NEW.sub_category_name,'') || ' ' || coalesce(NEW.sub_category_code,'') || ' ' || coalesce(NEW.description,'')
-    );
-    RETURN NEW;
-END
-$$ LANGUAGE plpgsql;
+    q:=unaccent(lower(input_text));
 
-CREATE TRIGGER tsvectorupdate_sub_category BEFORE INSERT OR UPDATE
-ON sub_category_entity FOR EACH ROW EXECUTE PROCEDURE sub_category_tsv_trigger();
+   RETURN QUERY
+   SELECT
+         category_id,
+         category_name,
+         category_code,
+         description,
+         ts_rank(document_tsv, to_tsquery('simple', q || ':*')) AS rank
+        FROM category_entity
+        WHERE document_tsv @@ to_tsquery('simple', q || ':*')
+        ORDER BY rank DESC
+        LIMIT limit_count;
+    END;
+    $$ LANGUAGE plpgsql;
+
 
 -- ===== COLLECTION ENTITY SEARCH =====
 
 ALTER TABLE collection_entity
-ADD COLUMN document_tsv tsvector;
+ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 
 UPDATE collection_entity
 SET document_tsv = to_tsvector(
     'simple',
-    coalesce(collection_name,'') || ' ' || coalesce(collection_code,'') || ' ' || coalesce(description,'')
+     coalesce(unaccent(lower(collection_name)),'') || ' ' ||
+     coalesce(unaccent(lower(collection_code)),'') || ' ' ||
+     coalesce(unaccent(lower(description)),'')
 );
 
-CREATE INDEX idx_collection_document_tsv ON collection_entity USING GIN(document_tsv);
+CREATE INDEX IF NOT EXISTS idx_collection_document_tsv ON collection_entity USING GIN(document_tsv);
 
 CREATE FUNCTION collection_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-        coalesce(NEW.collection_name,'') || ' ' || coalesce(NEW.collection_code,'') || ' ' || coalesce(NEW.description,'')
+         coalesce(unaccent(lower(NEW.collection_name)),'') || ' ' ||
+         coalesce(unaccent(lower(NEW.collection_code)),'') || ' ' ||
+         coalesce(unaccent(lower(NEW.description)),'')
     );
     RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER tsvectorupdate_collection BEFORE INSERT OR UPDATE
-ON collection_entity FOR EACH ROW EXECUTE PROCEDURE collection_tsv_trigger();
 
+DROP TRIGGER IF EXISTS tsvectorupdate_collection ON collection_entity;
 
--- ===== MATERIAL ENTITY SEARCH =====
+CREATE TRIGGER tsvectorupdate_collection
+BEFORE INSERT OR UPDATE ON collection_entity
+FOR EACH ROW
+EXECUTE FUNCTION collection_tsv_trigger();
 
-ALTER TABLE material_entity
-ADD COLUMN document_tsv tsvector;
+CREATE OR REPLACE FUNCTION collection_search_suggest( input_text text, limit_count int DEFAULT 5)
 
-UPDATE material_entity
-SET document_tsv = to_tsvector(
-    'simple',
-    coalesce(material_name,'') || ' ' || coalesce(material_code,'') || ' ' || coalesce(description,'')
-);
-
-CREATE INDEX idx_material_document_tsv ON material_entity USING GIN(document_tsv);
-
-CREATE FUNCTION material_tsv_trigger() RETURNS trigger AS $$
+RETURNS TABLE (
+    collection_id uuid,
+    collection_name text,
+    collection_code text,
+    description text,
+    rank float
+) AS $$ DECLARE
+    q text;
 BEGIN
-    NEW.document_tsv := to_tsvector(
-        'simple',
-        coalesce(NEW.material_name,'') || ' ' || coalesce(NEW.material_code,'') || ' ' || coalesce(NEW.description,'')
-    );
-    RETURN NEW;
-END
-$$ LANGUAGE plpgsql;
+    q:=unaccent(lower(input_text));
 
-CREATE TRIGGER tsvectorupdate_material BEFORE INSERT OR UPDATE
-ON material_entity FOR EACH ROW EXECUTE PROCEDURE material_tsv_trigger();
+   RETURN QUERY
+   SELECT
+         collection_id,
+         collection_name,
+         collection_code,
+         description,
+         ts_rank(document_tsv, to_tsquery('simple', q || ':*')) AS rank
+        FROM collection_entity
+        WHERE document_tsv @@ to_tsquery('simple', q || ':*')
+        ORDER BY rank DESC
+        LIMIT limit_count;
+    END;
+    $$ LANGUAGE plpgsql;
 
 -- ===== PRODUCT ENTITY SEARCH =====
 
 ALTER TABLE product_entity
-ADD COLUMN document_tsv tsvector;
+ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 
 UPDATE product_entity
 SET document_tsv = to_tsvector(
     'simple',
-    coalesce(product_name,'') || ' ' ||
-    coalesce(product_code,'') || ' ' ||
-    coalesce(origin,'') || ' ' ||
-    coalesce(fit_type,'') || ' ' ||
-    coalesce(description,'')
+     coalesce(unaccent(lower(product_name)),'') || ' ' ||
+     coalesce(unaccent(lower(product_code)),'') || ' ' ||
+     coalesce(unaccent(lower(origin)),'') || ' ' ||
+     coalesce(unaccent(lower(fit_type)),'') || ' ' ||
+     coalesce(unaccent(lower(description)),'')
 );
 
-CREATE INDEX idx_product_document_tsv ON product_entity USING GIN(document_tsv);
+CREATE INDEX IF NOT EXISTS idx_product_document_tsv ON product_entity USING GIN(document_tsv);
 
 CREATE FUNCTION product_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-        coalesce(NEW.product_name,'') || ' ' ||
-        coalesce(NEW.product_code,'') || ' ' ||
-        coalesce(NEW.origin,'') || ' ' ||
-        coalesce(NEW.fit_type,'') || ' ' ||
-        coalesce(NEW.description,'')
+       coalesce(unaccent(lower(NEW.product_name)),'') || ' ' ||
+       coalesce(unaccent(lower(NEW.product_code)),'') || ' ' ||
+       coalesce(unaccent(lower(NEW.origin)),'') || ' ' ||
+       coalesce(unaccent(lower(NEW.fit_type)),'') || ' ' ||
+       coalesce(unaccent(lower(NEW.description)),'')
     );
     RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER tsvectorupdate_product BEFORE INSERT OR UPDATE
-ON product_entity FOR EACH ROW EXECUTE PROCEDURE product_tsv_trigger();
+DROP TRIGGER IF EXISTS tsvectorupdate_product ON product_entity;
 
+CREATE TRIGGER tsvectorupdate_product
+BEFORE INSERT OR UPDATE ON product_entity
+FOR EACH ROW
+EXECUTE FUNCTION product_tsv_trigger();
+
+CREATE OR REPLACE FUNCTION product_search_suggest( input_text text, limit_count int DEFAULT 5)
+
+RETURNS TABLE (
+    product_id uuid,
+    product_name text,
+    product_code text,
+    origin text,
+    fit_type text,
+    description text,
+    rank float
+) AS $$ DECLARE
+    q text;
+BEGIN
+    q:=unaccent(lower(input_text));
+
+   RETURN QUERY
+   SELECT
+         product_id,
+         product_name,
+         product_code,
+         origin,
+         fit_type,
+         description,
+         ts_rank(document_tsv, to_tsquery('simple', q || ':*')) AS rank
+        FROM product_entity
+        WHERE document_tsv @@ to_tsquery('simple', q || ':*')
+        ORDER BY rank DESC
+        LIMIT limit_count;
+    END;
+    $$ LANGUAGE plpgsql;
+
+-- ===== SUB_CATEGORY ENTITY SEARCH =====
+
+ALTER TABLE sub_category_entity
+ADD COLUMN IF NOT EXISTS document_tsv tsvector;
+
+-- Cập nhật dữ liệu hiện có
+UPDATE sub_category_entity
+SET document_tsv = to_tsvector(
+    'simple',
+    coalesce(unaccent(lower(sub_category_name)),'') || ' ' ||
+    coalesce(unaccent(lower(sub_category_code)),'') || ' ' ||
+    coalesce(unaccent(lower(description)),'')
+);
+
+-- Tạo index GIN
+CREATE INDEX IF NOT EXISTS idx_sub_category_document_tsv
+ON sub_category_entity USING GIN(document_tsv);
+
+-- Trigger function
+CREATE OR REPLACE FUNCTION sub_category_tsv_trigger() RETURNS trigger AS $$
+BEGIN
+    NEW.document_tsv := to_tsvector(
+        'simple',
+        coalesce(unaccent(lower(NEW.sub_category_name)),'') || ' ' ||
+        coalesce(unaccent(lower(NEW.sub_category_code)),'') || ' ' ||
+        coalesce(unaccent(lower(NEW.description)),'')
+    );
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+-- Tạo trigger
+DROP TRIGGER IF EXISTS tsvectorupdate_sub_category ON sub_category_entity;
+
+CREATE TRIGGER tsvectorupdate_sub_category
+BEFORE INSERT OR UPDATE ON sub_category_entity
+FOR EACH ROW
+EXECUTE FUNCTION sub_category_tsv_trigger();
+
+-- Search suggest function
+CREATE OR REPLACE FUNCTION sub_category_search_suggest(input_text text, limit_count int DEFAULT 5)
+RETURNS TABLE (
+    sub_category_id uuid,
+    sub_category_name text,
+    sub_category_code text,
+    description text,
+    rank float
+) AS $$
+DECLARE
+    q text;
+BEGIN
+    q := unaccent(lower(input_text));
+
+    RETURN QUERY
+    SELECT
+        sub_category_id,
+        sub_category_name,
+        sub_category_code,
+        description,
+        ts_rank(document_tsv, to_tsquery('simple', q || ':*')) AS rank
+    FROM sub_category_entity
+    WHERE document_tsv @@ to_tsquery('simple', q || ':*')
+    ORDER BY rank DESC
+    LIMIT limit_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ===== MATERIAL ENTITY SEARCH =====
+
+ALTER TABLE material_entity
+ADD COLUMN IF NOT EXISTS document_tsv tsvector;
+
+-- Cập nhật dữ liệu hiện có
+UPDATE material_entity
+SET document_tsv = to_tsvector(
+    'simple',
+    coalesce(unaccent(lower(material_name)),'') || ' ' ||
+    coalesce(unaccent(lower(material_code)),'') || ' ' ||
+    coalesce(unaccent(lower(description)),'')
+);
+
+-- Tạo index GIN
+CREATE INDEX IF NOT EXISTS idx_material_document_tsv
+ON material_entity USING GIN(document_tsv);
+
+-- Trigger function
+CREATE OR REPLACE FUNCTION material_tsv_trigger() RETURNS trigger AS $$
+BEGIN
+    NEW.document_tsv := to_tsvector(
+        'simple',
+        coalesce(unaccent(lower(NEW.material_name)),'') || ' ' ||
+        coalesce(unaccent(lower(NEW.material_code)),'') || ' ' ||
+        coalesce(unaccent(lower(NEW.description)),'')
+    );
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+-- Tạo trigger
+DROP TRIGGER IF EXISTS tsvectorupdate_material ON material_entity;
+
+CREATE TRIGGER tsvectorupdate_material
+BEFORE INSERT OR UPDATE ON material_entity
+FOR EACH ROW
+EXECUTE FUNCTION material_tsv_trigger();
+
+-- Search suggest function
+CREATE OR REPLACE FUNCTION material_search_suggest(input_text text, limit_count int DEFAULT 5)
+RETURNS TABLE (
+    material_id uuid,
+    material_name text,
+    material_code text,
+    description text,
+    rank float
+) AS $$
+DECLARE
+    q text;
+BEGIN
+    q := unaccent(lower(input_text));
+
+    RETURN QUERY
+    SELECT
+        material_id,
+        material_name,
+        material_code,
+        description,
+        ts_rank(document_tsv, to_tsquery('simple', q || ':*')) AS rank
+    FROM material_entity
+    WHERE document_tsv @@ to_tsquery('simple', q || ':*')
+    ORDER BY rank DESC
+    LIMIT limit_count;
+END;
+$$ LANGUAGE plpgsql;

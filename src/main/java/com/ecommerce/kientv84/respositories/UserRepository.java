@@ -14,13 +14,16 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpecificationExecutor<UserEntity> {
 
     @Query(value = """
-        SELECT * FROM user_entity
-        WHERE document_tsv @@ to_tsquery('simple', :q || ':*')
-        ORDER BY ts_rank(document_tsv, to_tsquery('simple', :q || ':*')) DESC
-        LIMIT :limit
-        """, nativeQuery = true)
+    SELECT * FROM user_entity
+    WHERE document_tsv @@ to_tsquery('simple', unaccent(lower(:q)) || ':*')
+    ORDER BY ts_rank(document_tsv, to_tsquery('simple', unaccent(lower(:q)) || ':*')) DESC
+    LIMIT :limit
+    """, nativeQuery = true)
     List<UserEntity> searchUserSuggestion(@Param("q") String q, @Param("limit") int limit);
 
+    // Hoặc dùng function PostgreSQL đã tạo
+    @Query(value = "SELECT * FROM user_search_suggest(:q, :limit)", nativeQuery = true)
+    List<UserEntity> searchUserSuggestionFunction(@Param("q") String q, @Param("limit") int limit);
 
     UserEntity findByUserEmail(String email);
 //

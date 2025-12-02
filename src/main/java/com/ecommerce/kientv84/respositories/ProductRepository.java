@@ -18,5 +18,5 @@ public interface ProductRepository extends JpaRepository<ProductEntity, UUID>, J
         ORDER BY ts_rank(document_tsv, to_tsquery('simple', :q || ':*')) DESC
         LIMIT :limit
         """, nativeQuery = true)
-    List<ProductEntity> searchProductdSuggestion(@Param("q") String q, @Param("limit") int limit);
+    List<ProductEntity> searchProductSuggestion(@Param("q") String q, @Param("limit") int limit);
 }
