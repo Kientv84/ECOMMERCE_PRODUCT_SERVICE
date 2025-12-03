@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface BrandService {
-    PagedResponse<BrandResponse> searchUsers(BrandSearchRequest req);
+    PagedResponse<BrandResponse> searchBrands(BrandSearchRequest req);
 
-    List<BrandResponse> searchUserSuggestion(String q, int limit);
+    List<BrandResponse> searchBrandSuggestion(String q, int limit);
 
     BrandResponse createBrand(BrandRequest brandRequest);
 

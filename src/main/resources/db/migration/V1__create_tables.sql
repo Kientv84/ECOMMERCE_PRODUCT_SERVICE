@@ -207,7 +207,7 @@ BEGIN
 
     RETURN QUERY
     SELECT
-        user_id,
+        id AS user_id,
         user_name,
         user_email,
         user_phone_number,
@@ -275,7 +275,7 @@ BEGIN
 
    RETURN QUERY
    SELECT
-         brand_id,
+         id AS brand_id,
          brand_name,
          brand_code,
          description,
@@ -366,7 +366,7 @@ BEGIN
 
    RETURN QUERY
    SELECT
-         category_id,
+         id AS category_id,
          category_name,
          category_code,
          description,
@@ -429,7 +429,7 @@ BEGIN
 
    RETURN QUERY
    SELECT
-         collection_id,
+         id AS collection_id,
          collection_name,
          collection_code,
          description,
@@ -496,7 +496,7 @@ BEGIN
 
    RETURN QUERY
    SELECT
-         product_id,
+         id AS product_id,
          product_name,
          product_code,
          origin,
@@ -565,7 +565,7 @@ BEGIN
 
     RETURN QUERY
     SELECT
-        sub_category_id,
+        id AS sub_category_id,
         sub_category_name,
         sub_category_code,
         description,
@@ -632,7 +632,7 @@ BEGIN
 
     RETURN QUERY
     SELECT
-        material_id,
+        id AS material_id,
         material_name,
         material_code,
         description,

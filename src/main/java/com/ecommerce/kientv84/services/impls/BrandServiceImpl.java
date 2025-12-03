@@ -1,6 +1,5 @@
 package com.ecommerce.kientv84.services.impls;
 
-import com.cloudinary.utils.ObjectUtils;
 import com.ecommerce.kientv84.commons.Constant;
 import com.ecommerce.kientv84.commons.EnumError;
 import com.ecommerce.kientv84.commons.StatusEnum;
@@ -9,14 +8,9 @@ import com.ecommerce.kientv84.dtos.request.BrandUpdateRequest;
 import com.ecommerce.kientv84.dtos.request.search.brand.BrandSearchModel;
 import com.ecommerce.kientv84.dtos.request.search.brand.BrandSearchOption;
 import com.ecommerce.kientv84.dtos.request.search.brand.BrandSearchRequest;
-import com.ecommerce.kientv84.dtos.request.search.user.UserSearchModel;
-import com.ecommerce.kientv84.dtos.request.search.user.UserSearchOption;
-import com.ecommerce.kientv84.dtos.request.search.user.UserSearchRequest;
 import com.ecommerce.kientv84.dtos.response.BrandResponse;
 import com.ecommerce.kientv84.dtos.response.PagedResponse;
-import com.ecommerce.kientv84.dtos.response.UserResponse;
 import com.ecommerce.kientv84.entites.BrandEntity;
-import com.ecommerce.kientv84.entites.UserEntity;
 import com.ecommerce.kientv84.exceptions.ServiceException;
 import com.ecommerce.kientv84.mappers.BrandMapper;
 import com.ecommerce.kientv84.respositories.BrandRepository;
@@ -51,7 +45,7 @@ public class BrandServiceImpl implements BrandService {
     private final UploadFileProvider uploadFileProvider;
 
     @Override
-    public PagedResponse<BrandResponse> searchUsers(BrandSearchRequest req) {
+    public PagedResponse<BrandResponse> searchBrands(BrandSearchRequest req) {
         log.info("Get all brand api calling...");
         String key = "brands:list:" + req.hashKey();
         try {
@@ -106,7 +100,7 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public List<BrandResponse> searchUserSuggestion(String q, int limit) {
+    public List<BrandResponse> searchBrandSuggestion(String q, int limit) {
         List<BrandEntity> brands = brandRepository.searchBrandSuggestion(q, limit);
         return brands.stream().map(br -> brandMapper.mapToBrandResponse(br)).toList();
     }

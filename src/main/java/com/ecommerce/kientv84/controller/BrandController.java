@@ -25,14 +25,14 @@ public class BrandController {
     private final BrandService brandService;
 
     @PostMapping("/brands/filter")
-    public ResponseEntity<PagedResponse<BrandResponse>> searchUsers(@RequestBody BrandSearchRequest req) {
-        return ResponseEntity.ok(brandService.searchUsers(req));
+    public ResponseEntity<PagedResponse<BrandResponse>> searchBrands(@RequestBody BrandSearchRequest req) {
+        return ResponseEntity.ok(brandService.searchBrands(req));
     }
 
     @GetMapping("/brands/suggestion")
-    public ResponseEntity<List<BrandResponse>> getUserSuggestions(@RequestParam String q,
+    public ResponseEntity<List<BrandResponse>> getBrandSuggestions(@RequestParam String q,
                                                                  @RequestParam(defaultValue = "5") int limit) {
-        return ResponseEntity.ok(brandService.searchUserSuggestion(q, limit));
+        return ResponseEntity.ok(brandService.searchBrandSuggestion(q, limit));
     }
 
     @PostMapping("/brand")
