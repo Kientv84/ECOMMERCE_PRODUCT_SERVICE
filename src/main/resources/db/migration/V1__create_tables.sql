@@ -151,13 +151,13 @@ CREATE INDEX IF NOT EXISTS idx_product_image_product ON product_image_entity(pro
 ALTER TABLE user_entity
 ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 
--- 2. Cập nhật dữ liệu hiện có với unaccent + lower
+-- 2. Cập nhật dữ liệu hiện có với public.unaccent + lower
 UPDATE user_entity
 SET document_tsv = to_tsvector(
     'simple',
-    coalesce(unaccent(lower(user_name)),'') || ' ' ||
-    coalesce(unaccent(lower(user_email)),'') || ' ' ||
-    coalesce(unaccent(lower(user_phone_number)),'')
+    coalesce(public.unaccent(lower(user_name)),'') || ' ' ||
+    coalesce(public.unaccent(lower(user_email)),'') || ' ' ||
+    coalesce(public.unaccent(lower(user_phone_number)),'')
 );
 
 -- 3. Tạo GIN index để search nhanh (nếu chưa có)
@@ -169,9 +169,9 @@ CREATE OR REPLACE FUNCTION user_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-        coalesce(unaccent(lower(NEW.user_name)),'') || ' ' ||
-        coalesce(unaccent(lower(NEW.user_email)),'') || ' ' ||
-        coalesce(unaccent(lower(NEW.user_phone_number)),'')
+        coalesce(public.unaccent(lower(NEW.user_name)),'') || ' ' ||
+        coalesce(public.unaccent(lower(NEW.user_email)),'') || ' ' ||
+        coalesce(public.unaccent(lower(NEW.user_phone_number)),'')
     );
     RETURN NEW;
 END
@@ -202,8 +202,8 @@ RETURNS TABLE (
 DECLARE
     q text;
 BEGIN
-    -- Chuẩn hóa input: unaccent + lower
-    q := unaccent(lower(input_text));
+    -- Chuẩn hóa input: public.unaccent + lower
+    q := public.unaccent(lower(input_text));
 
     RETURN QUERY
     SELECT
@@ -233,9 +233,9 @@ ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 UPDATE brand_entity
 SET document_tsv = to_tsvector(
     'simple',
-    coalesce(unaccent(lower(brand_name)),'') || ' ' ||
-    coalesce(unaccent(lower(brand_code)),'') || ' ' ||
-    coalesce(unaccent(lower(description)),'')
+    coalesce(public.unaccent(lower(brand_name)),'') || ' ' ||
+    coalesce(public.unaccent(lower(brand_code)),'') || ' ' ||
+    coalesce(public.unaccent(lower(description)),'')
 );
 
 
@@ -245,9 +245,9 @@ CREATE OR REPLACE FUNCTION brand_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-         coalesce(unaccent(lower(NEW.brand_name)),'') || ' ' ||
-         coalesce(unaccent(lower(NEW.brand_code)),'') || ' ' ||
-         coalesce(unaccent(lower(NEW.description)),'')
+         coalesce(public.unaccent(lower(NEW.brand_name)),'') || ' ' ||
+         coalesce(public.unaccent(lower(NEW.brand_code)),'') || ' ' ||
+         coalesce(public.unaccent(lower(NEW.description)),'')
     );
     RETURN NEW;
 END
@@ -271,7 +271,7 @@ RETURNS TABLE (
 ) AS $$ DECLARE
     q text;
 BEGIN
-    q:=unaccent(lower(input_text));
+    q:=public.unaccent(lower(input_text));
 
    RETURN QUERY
    SELECT
@@ -324,9 +324,9 @@ ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 UPDATE category_entity
 SET document_tsv = to_tsvector(
     'simple',
-     coalesce(unaccent(lower(category_name)),'') || ' ' ||
-     coalesce(unaccent(lower(category_code)),'') || ' ' ||
-     coalesce(unaccent(lower(description)),'')
+     coalesce(public.unaccent(lower(category_name)),'') || ' ' ||
+     coalesce(public.unaccent(lower(category_code)),'') || ' ' ||
+     coalesce(public.unaccent(lower(description)),'')
 );
 
 CREATE INDEX IF NOT EXISTS idx_category_document_tsv ON category_entity USING GIN(document_tsv);
@@ -335,9 +335,9 @@ CREATE FUNCTION category_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-        coalesce(unaccent(lower(NEW.category_name)),'') || ' ' ||
-        coalesce(unaccent(lower(NEW.category_code)),'') || ' ' ||
-        coalesce(unaccent(lower(NEW.description)),'')
+        coalesce(public.unaccent(lower(NEW.category_name)),'') || ' ' ||
+        coalesce(public.unaccent(lower(NEW.category_code)),'') || ' ' ||
+        coalesce(public.unaccent(lower(NEW.description)),'')
     );
     RETURN NEW;
 END
@@ -362,7 +362,7 @@ RETURNS TABLE (
 ) AS $$ DECLARE
     q text;
 BEGIN
-    q:=unaccent(lower(input_text));
+    q:=public.unaccent(lower(input_text));
 
    RETURN QUERY
    SELECT
@@ -387,9 +387,9 @@ ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 UPDATE collection_entity
 SET document_tsv = to_tsvector(
     'simple',
-     coalesce(unaccent(lower(collection_name)),'') || ' ' ||
-     coalesce(unaccent(lower(collection_code)),'') || ' ' ||
-     coalesce(unaccent(lower(description)),'')
+     coalesce(public.unaccent(lower(collection_name)),'') || ' ' ||
+     coalesce(public.unaccent(lower(collection_code)),'') || ' ' ||
+     coalesce(public.unaccent(lower(description)),'')
 );
 
 CREATE INDEX IF NOT EXISTS idx_collection_document_tsv ON collection_entity USING GIN(document_tsv);
@@ -398,9 +398,9 @@ CREATE FUNCTION collection_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-         coalesce(unaccent(lower(NEW.collection_name)),'') || ' ' ||
-         coalesce(unaccent(lower(NEW.collection_code)),'') || ' ' ||
-         coalesce(unaccent(lower(NEW.description)),'')
+         coalesce(public.unaccent(lower(NEW.collection_name)),'') || ' ' ||
+         coalesce(public.unaccent(lower(NEW.collection_code)),'') || ' ' ||
+         coalesce(public.unaccent(lower(NEW.description)),'')
     );
     RETURN NEW;
 END
@@ -425,7 +425,7 @@ RETURNS TABLE (
 ) AS $$ DECLARE
     q text;
 BEGIN
-    q:=unaccent(lower(input_text));
+    q:=public.unaccent(lower(input_text));
 
    RETURN QUERY
    SELECT
@@ -449,11 +449,11 @@ ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 UPDATE product_entity
 SET document_tsv = to_tsvector(
     'simple',
-     coalesce(unaccent(lower(product_name)),'') || ' ' ||
-     coalesce(unaccent(lower(product_code)),'') || ' ' ||
-     coalesce(unaccent(lower(origin)),'') || ' ' ||
-     coalesce(unaccent(lower(fit_type)),'') || ' ' ||
-     coalesce(unaccent(lower(description)),'')
+     coalesce(public.unaccent(lower(product_name)),'') || ' ' ||
+     coalesce(public.unaccent(lower(product_code)),'') || ' ' ||
+     coalesce(public.unaccent(lower(origin)),'') || ' ' ||
+     coalesce(public.unaccent(lower(fit_type)),'') || ' ' ||
+     coalesce(public.unaccent(lower(description)),'')
 );
 
 CREATE INDEX IF NOT EXISTS idx_product_document_tsv ON product_entity USING GIN(document_tsv);
@@ -462,11 +462,11 @@ CREATE FUNCTION product_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-       coalesce(unaccent(lower(NEW.product_name)),'') || ' ' ||
-       coalesce(unaccent(lower(NEW.product_code)),'') || ' ' ||
-       coalesce(unaccent(lower(NEW.origin)),'') || ' ' ||
-       coalesce(unaccent(lower(NEW.fit_type)),'') || ' ' ||
-       coalesce(unaccent(lower(NEW.description)),'')
+       coalesce(public.unaccent(lower(NEW.product_name)),'') || ' ' ||
+       coalesce(public.unaccent(lower(NEW.product_code)),'') || ' ' ||
+       coalesce(public.unaccent(lower(NEW.origin)),'') || ' ' ||
+       coalesce(public.unaccent(lower(NEW.fit_type)),'') || ' ' ||
+       coalesce(public.unaccent(lower(NEW.description)),'')
     );
     RETURN NEW;
 END
@@ -492,7 +492,7 @@ RETURNS TABLE (
 ) AS $$ DECLARE
     q text;
 BEGIN
-    q:=unaccent(lower(input_text));
+    q:=public.unaccent(lower(input_text));
 
    RETURN QUERY
    SELECT
@@ -519,9 +519,9 @@ ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 UPDATE sub_category_entity
 SET document_tsv = to_tsvector(
     'simple',
-    coalesce(unaccent(lower(sub_category_name)),'') || ' ' ||
-    coalesce(unaccent(lower(sub_category_code)),'') || ' ' ||
-    coalesce(unaccent(lower(description)),'')
+    coalesce(public.unaccent(lower(sub_category_name)),'') || ' ' ||
+    coalesce(public.unaccent(lower(sub_category_code)),'') || ' ' ||
+    coalesce(public.unaccent(lower(description)),'')
 );
 
 -- Tạo index GIN
@@ -533,9 +533,9 @@ CREATE OR REPLACE FUNCTION sub_category_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-        coalesce(unaccent(lower(NEW.sub_category_name)),'') || ' ' ||
-        coalesce(unaccent(lower(NEW.sub_category_code)),'') || ' ' ||
-        coalesce(unaccent(lower(NEW.description)),'')
+        coalesce(public.unaccent(lower(NEW.sub_category_name)),'') || ' ' ||
+        coalesce(public.unaccent(lower(NEW.sub_category_code)),'') || ' ' ||
+        coalesce(public.unaccent(lower(NEW.description)),'')
     );
     RETURN NEW;
 END
@@ -561,7 +561,7 @@ RETURNS TABLE (
 DECLARE
     q text;
 BEGIN
-    q := unaccent(lower(input_text));
+    q := public.unaccent(lower(input_text));
 
     RETURN QUERY
     SELECT
@@ -586,9 +586,9 @@ ADD COLUMN IF NOT EXISTS document_tsv tsvector;
 UPDATE material_entity
 SET document_tsv = to_tsvector(
     'simple',
-    coalesce(unaccent(lower(material_name)),'') || ' ' ||
-    coalesce(unaccent(lower(material_code)),'') || ' ' ||
-    coalesce(unaccent(lower(description)),'')
+    coalesce(public.unaccent(lower(material_name)),'') || ' ' ||
+    coalesce(public.unaccent(lower(material_code)),'') || ' ' ||
+    coalesce(public.unaccent(lower(description)),'')
 );
 
 -- Tạo index GIN
@@ -600,9 +600,9 @@ CREATE OR REPLACE FUNCTION material_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     NEW.document_tsv := to_tsvector(
         'simple',
-        coalesce(unaccent(lower(NEW.material_name)),'') || ' ' ||
-        coalesce(unaccent(lower(NEW.material_code)),'') || ' ' ||
-        coalesce(unaccent(lower(NEW.description)),'')
+        coalesce(public.unaccent(lower(NEW.material_name)),'') || ' ' ||
+        coalesce(public.unaccent(lower(NEW.material_code)),'') || ' ' ||
+        coalesce(public.unaccent(lower(NEW.description)),'')
     );
     RETURN NEW;
 END
@@ -628,7 +628,7 @@ RETURNS TABLE (
 DECLARE
     q text;
 BEGIN
-    q := unaccent(lower(input_text));
+    q := public.unaccent(lower(input_text));
 
     RETURN QUERY
     SELECT

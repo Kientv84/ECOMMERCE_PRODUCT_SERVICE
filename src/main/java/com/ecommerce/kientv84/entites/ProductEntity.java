@@ -58,7 +58,7 @@ public class ProductEntity {
     @JoinColumn(name = "sub_category_id")
     private SubCategoryEntity subCategory; // T-shirt / Shorts / Sports Bra...
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collection_id")
     private CollectionEntity collection; // Apex / Vital / Legacy...
 

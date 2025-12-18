@@ -42,8 +42,8 @@ public class CollectionEntity {
     private String status; // ACTIVE / INACTIVE
 
     // ====== Quan hệ với Product ======
-    @OneToOne(mappedBy = "collection", cascade = CascadeType.ALL, orphanRemoval = true)
-    private ProductEntity product;
+    @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
+    private List<ProductEntity> products;
 
     // ====== Metadata ======
     @CreatedDate
