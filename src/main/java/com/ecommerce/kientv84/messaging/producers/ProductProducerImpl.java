@@ -1,5 +1,6 @@
 package com.ecommerce.kientv84.messaging.producers;
 
+import com.ecommerce.kientv84.commons.EventType;
 import com.ecommerce.kientv84.dtos.request.kafka.EventMetadata;
 import com.ecommerce.kientv84.dtos.request.kafka.KafkaEvent;
 import com.ecommerce.kientv84.dtos.request.kafka.KafkaInventoryRequest;
@@ -27,7 +28,7 @@ public class ProductProducerImpl implements ProductProducer{
         KafkaEvent<KafkaInventoryRequest> message = KafkaEvent.<KafkaInventoryRequest>builder()
                 .metadata(EventMetadata.builder()
                         .eventId(UUID.randomUUID())
-                        .eventType(topic)
+                        .eventType(EventType.PRODUCT_CREATED_INVENTORY.name())
                         .source("product-service")
                         .version(1)
                         .build())
