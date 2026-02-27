@@ -4,6 +4,9 @@ public enum EventType {
 
     // ===== PRODUCT =====
     PRODUCT_CREATED_INVENTORY,
-    PRODUCT_ERROR
+    PRODUCT_ERROR,
+
+    // ===== PRODUCT =====
+    USER_CREATE
 }
 

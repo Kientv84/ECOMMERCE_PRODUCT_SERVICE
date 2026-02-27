@@ -13,5 +13,6 @@ import org.springframework.context.annotation.Configuration;
 public class KafkaTopicProperties {
     private String productCreatedInventory;
     private String errorProduct;
+    private String userCreated;
 }
 

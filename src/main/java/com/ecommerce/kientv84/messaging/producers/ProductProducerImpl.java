@@ -4,6 +4,7 @@ import com.ecommerce.kientv84.commons.EventType;
 import com.ecommerce.kientv84.dtos.request.kafka.EventMetadata;
 import com.ecommerce.kientv84.dtos.request.kafka.KafkaEvent;
 import com.ecommerce.kientv84.dtos.request.kafka.KafkaInventoryRequest;
+import com.ecommerce.kientv84.dtos.response.kafka.KafkaUserResponse;
 import com.ecommerce.kientv84.properties.KafkaTopicProperties;
 import com.ecommerce.kientv84.services.KafkaService;
 import com.ecommerce.kientv84.utils.KafkaObjectError;

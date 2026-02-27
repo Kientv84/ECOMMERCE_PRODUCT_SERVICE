@@ -13,10 +13,12 @@ import com.ecommerce.kientv84.dtos.request.search.user.UserSearchOption;
 import com.ecommerce.kientv84.dtos.request.search.user.UserSearchRequest;
 import com.ecommerce.kientv84.dtos.response.PagedResponse;
 import com.ecommerce.kientv84.dtos.response.UserResponse;
+import com.ecommerce.kientv84.dtos.response.kafka.KafkaUserResponse;
 import com.ecommerce.kientv84.entites.RoleEntity;
 import com.ecommerce.kientv84.entites.UserEntity;
 import com.ecommerce.kientv84.exceptions.ServiceException;
 import com.ecommerce.kientv84.mappers.UserMapper;
+import com.ecommerce.kientv84.messaging.producers.UserProducer;
 import com.ecommerce.kientv84.respositories.RoleRepository;
 import com.ecommerce.kientv84.respositories.UserRepository;
 import com.ecommerce.kientv84.services.RedisService;
@@ -51,6 +53,7 @@ public class UserServiceImpl implements UserService {
     private final RedisService redisService;
     private final UploadFileProvider uploadFileProvider;
     private final Cloudinary cloudinary;
+    private final UserProducer userProducer;
 
     @Override
     public PagedResponse<UserResponse> searchUsers(UserSearchRequest req) {
@@ -138,6 +141,12 @@ public class UserServiceImpl implements UserService {
             UserEntity savedUser = userRepository.save(initUser);
 
             redisService.deleteByKeys("user:list:*");
+
+            // produce kafka
+
+            KafkaUserResponse kafkaUserResponse = userMapper.mapToKafkaUserResponse(savedUser);
+
+            userProducer.produceUserCreate(kafkaUserResponse);
 
             return userMapper.mapToUserResponse(savedUser);
 
