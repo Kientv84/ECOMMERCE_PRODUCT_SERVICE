@@ -27,7 +27,7 @@ public class UserProducerImpl implements  UserProducer{
         KafkaEvent event = KafkaEvent.builder()
                 .metadata(EventMetadata.builder()
                         .eventId(UUID.randomUUID())
-                        .eventType(EventType.USER_CREATE.name())
+                        .eventType(EventType.USER_CREATED.name())
                         .source("product-user-service")
                         .version(1)
                         .build())

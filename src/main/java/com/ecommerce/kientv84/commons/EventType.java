@@ -7,6 +7,6 @@ public enum EventType {
     PRODUCT_ERROR,
 
     // ===== PRODUCT =====
-    USER_CREATE
+    USER_CREATED
 }
 
